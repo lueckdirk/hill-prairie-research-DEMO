@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hill Prairie Research - Driftless Region</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #2c5530;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+
+        .header p {
+            color: #5a6b5d;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 120px);
+            background: white;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.98);
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #28a745;
+        }
+
+        .control-group h3 {
+            color: #2c5530;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .layer-control {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .layer-control:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .layer-control input {
+            margin-right: 10px;
+        }
+
+        .layer-control label {
+            flex: 1;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .legend {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 15px;
+        }
+
+        .legend h4 {
+            color: #2c5530;
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .stats-panel {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .popup-content {
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .popup-content h3 {
+            color: #2c5530;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 5px;
+        }
+
+        .popup-metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+
+        .popup-metric strong {
+            color: #495057;
+        }
+
+        .connectivity-high { background-color: #28a745; }
+        .connectivity-medium { background-color: #ffc107; }
+        .connectivity-low { background-color: #dc3545; }
+        
+        .habitat-excellent { background-color: #155724; }
+        .habitat-good { background-color: #28a745; }
+        .habitat-fair { background-color: #856404; }
+        .habitat-poor { background-color: #721c24; }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 200px;
+            }
+            
+            .map-container {
+                height: calc(100vh - 320px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌿 Hill Prairie Research - Driftless Region</h1>
+        <p>Interactive visualization of remnant hill prairie connectivity, species distributions, and conservation priorities. Integrating machine learning models with citizen science data from iNaturalist.</p>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="control-group">
+                <h3>Map Layers</h3>
+                <div class="layer-control">
+                    <input type="checkbox" id="prairies" checked>
+                    <label for="prairies">Hill Prairie Remnants</label>
+                </div>
+                <div class="layer-control">
+                    <input type="checkbox" id="connectivity">
+                    <label for="connectivity">Connectivity Corridors</label>
+                </div>
+                <div class="layer-control">
+                    <input type="checkbox" id="species">
+                    <label for="species">iNaturalist Species</label>
+                </div>
+                <div class="layer-control">
+                    <input type="checkbox" id="habitat">
+                    <label for="habitat">Habitat Suitability</label>
+                </div>
+                <div class="layer-control">
+                    <input type="checkbox" id="priority">
+                    <label for="priority">Conservation Priority</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Data Filters</h3>
+                <label>Connectivity Score:</label>
+                <input type="range" id="connectivity-filter" min="0" max="100" value="0" style="width: 100%; margin: 10px 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #666;">
+                    <span>Low</span><span>High</span>
+                </div>
+                
+                <label style="margin-top: 15px; display: block;">Species Richness:</label>
+                <input type="range" id="species-filter" min="0" max="50" value="0" style="width: 100%; margin: 10px 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #666;">
+                    <span>0</span><span>50+</span>
+                </div>
+            </div>
+
+            <div class="legend">
+                <h4>Prairie Quality</h4>
+                <div class="legend-item">
+                    <div class="legend-color habitat-excellent"></div>
+                    <span>Excellent (>80%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color habitat-good"></div>
+                    <span>Good (60-80%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color habitat-fair"></div>
+                    <span>Fair (40-60%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color habitat-poor"></div>
+                    <span>Poor (<40%)</span>
+                </div>
+            </div>
+
+            <div class="stats-panel">
+                <h4>Study Area Summary</h4>
+                <div class="stat-item">
+                    <span>Prairie Remnants:</span>
+                    <span class="stat-value">127</span>
+                </div>
+                <div class="stat-item">
+                    <span>Total Area:</span>
+                    <span class="stat-value">2,340 ha</span>
+                </div>
+                <div class="stat-item">
+                    <span>Species Observed:</span>
+                    <span class="stat-value">312</span>
+                </div>
+                <div class="stat-item">
+                    <span>iNaturalist Records:</span>
+                    <span class="stat-value">1,847</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
+    <script>
+        // Initialize map centered on Driftless Region
+        const map = L.map('map').setView([43.25, -90.8], 10);
+
+        // Add base layers
+        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        });
+
+        const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri'
+        });
+
+        const terrain = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri'
+        });
+
+        // Base layer control
+        const baseLayers = {
+            "OpenStreetMap": osm,
+            "Satellite": satellite,
+            "Terrain": terrain
+        };
+
+        osm.addTo(map);
+        L.control.layers(baseLayers).addTo(map);
+
+        // Sample prairie data (representing your actual GeoJSON data)
+        const prairieData = [
+            {
+                name: "Kickapoo Valley Reserve",
+                lat: 43.45, lng: -90.65,
+                area: 185, connectivity: 87, species: 42, quality: 95,
+                description: "Large, high-quality remnant with excellent connectivity to surrounding habitats."
+            },
+            {
+                name: "Governor Dodge State Park",
+                lat: 43.21, lng: -90.11,
+                area: 73, connectivity: 72, species: 38, quality: 88,
+                description: "Well-preserved hill prairie with moderate connectivity corridor potential."
+            },
+            {
+                name: "Wyalusing State Park",
+                lat: 43.15, lng: -91.10,
+                area: 94, connectivity: 91, species: 45, quality: 92,
+                description: "Mississippi River bluff prairie with high species diversity and connectivity."
+            },
+            {
+                name: "Rush Creek Prairie",
+                lat: 43.32, lng: -90.75,
+                area: 26, connectivity: 54, species: 28, quality: 67,
+                description: "Smaller remnant with restoration potential and moderate habitat quality."
+            },
+            {
+                name: "Pecatonica Prairie",
+                lat: 42.88, lng: -89.95,
+                area: 41, connectivity: 78, species: 33, quality: 79,
+                description: "Well-connected prairie with good restoration success and species recovery."
+            },
+            {
+                name: "Blue Mounds State Park",
+                lat: 43.04, lng: -89.85,
+                area: 67, connectivity: 83, species: 41, quality: 86,
+                description: "High-elevation prairie remnant with excellent native plant diversity."
+            },
+            {
+                name: "Military Ridge Prairie",
+                lat: 43.18, lng: -89.72,
+                area: 29, connectivity: 46, species: 22, quality: 58,
+                description: "Fragmented remnant requiring conservation attention and habitat restoration."
+            },
+            {
+                name: "Wisconsin River Bluffs",
+                lat: 43.39, lng: -90.12,
+                area: 112, connectivity: 89, species: 47, quality: 91,
+                description: "Large river bluff system with exceptional connectivity and species richness."
+            }
+        ];
+
+        // Layer groups
+        const prairieLayer = L.layerGroup();
+        const connectivityLayer = L.layerGroup();
+        const speciesLayer = L.layerGroup();
+        const habitatLayer = L.layerGroup();
+        const priorityLayer = L.layerGroup();
+
+        // Function to get color based on quality
+        function getQualityColor(quality) {
+            return quality > 80 ? '#155724' :
+                   quality > 60 ? '#28a745' :
+                   quality > 40 ? '#856404' : '#721c24';
+        }
+
+        function getConnectivityColor(connectivity) {
+            return connectivity > 70 ? '#28a745' :
+                   connectivity > 40 ? '#ffc107' : '#dc3545';
+        }
+
+        // Add prairie markers
+        prairieData.forEach(prairie => {
+            const marker = L.circleMarker([prairie.lat, prairie.lng], {
+                radius: Math.sqrt(prairie.area) / 2 + 5,
+                fillColor: getQualityColor(prairie.quality),
+                color: '#2c5530',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+
+            const popupContent = `
+                <div class="popup-content">
+                    <h3>${prairie.name}</h3>
+                    <div class="popup-metric">
+                        <span>Area:</span>
+                        <strong>${prairie.area} hectares</strong>
+                    </div>
+                    <div class="popup-metric">
+                        <span>Habitat Quality:</span>
+                        <strong>${prairie.quality}%</strong>
+                    </div>
+                    <div class="popup-metric">
+                        <span>Connectivity Score:</span>
+                        <strong>${prairie.connectivity}/100</strong>
+                    </div>
+                    <div class="popup-metric">
+                        <span>Species Count:</span>
+                        <strong>${prairie.species} species</strong>
+                    </div>
+                    <p style="margin-top: 10px; font-style: italic; color: #666;">
+                        ${prairie.description}
+                    </p>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 0.9em;">
+                        <strong>Data Sources:</strong> Field surveys, iNaturalist observations, ML habitat model
+                    </div>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent);
+            prairieLayer.addLayer(marker);
+        });
+
+        // Add connectivity corridors (sample lines)
+        const corridors = [
+            [[43.45, -90.65], [43.21, -90.11]], // Kickapoo to Governor Dodge
+            [[43.15, -91.10], [43.32, -90.75]], // Wyalusing to Rush Creek
+            [[43.04, -89.85], [43.18, -89.72]], // Blue Mounds to Military Ridge
+            [[43.39, -90.12], [43.45, -90.65]]  // Wisconsin River to Kickapoo
+        ];
+
+        corridors.forEach(corridor => {
+            const line = L.polyline(corridor, {
+                color: '#28a745',
+                weight: 4,
+                opacity: 0.7,
+                dashArray: '10, 5'
+            });
+            line.bindPopup("High-priority connectivity corridor<br><strong>Resistance:</strong> Low<br><strong>Flow capacity:</strong> 847 units");
+            connectivityLayer.addLayer(line);
+        });
+
+        // Add species observation points (iNaturalist data simulation)
+        const speciesObs = [
+            {lat: 43.44, lng: -90.66, species: "Silphium laciniatum", common: "Compass Plant"},
+            {lat: 43.22, lng: -90.12, species: "Echinacea pallida", common: "Pale Purple Coneflower"},
+            {lat: 43.16, lng: -91.11, species: "Liatris aspera", common: "Rough Blazingstar"},
+            {lat: 43.05, lng: -89.86, species: "Gentiana puberulenta", common: "Downy Gentian"}
+        ];
+
+        speciesObs.forEach(obs => {
+            const marker = L.circleMarker([obs.lat, obs.lng], {
+                radius: 6,
+                fillColor: '#ff6b35',
+                color: '#fff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+            
+            marker.bindPopup(`
+                <strong>${obs.common}</strong><br>
+                <em>${obs.species}</em><br>
+                <small>Source: iNaturalist citizen science</small>
+            `);
+            
+            speciesLayer.addLayer(marker);
+        });
+
+        // Add habitat suitability overlay (sample polygons)
+        const habitatPolygons = [
+            {
+                coords: [[43.4, -90.7], [43.5, -90.7], [43.5, -90.6], [43.4, -90.6]],
+                suitability: 0.9
+            },
+            {
+                coords: [[43.1, -90.2], [43.25, -90.2], [43.25, -90.0], [43.1, -90.0]],
+                suitability: 0.7
+            }
+        ];
+
+        habitatPolygons.forEach(poly => {
+            const polygon = L.polygon(poly.coords, {
+                color: '#2c5530',
+                weight: 1,
+                fillColor: getQualityColor(poly.suitability * 100),
+                fillOpacity: 0.4
+            });
+            
+            polygon.bindPopup(`
+                <strong>ML Model Prediction</strong><br>
+                Habitat Suitability: ${(poly.suitability * 100).toFixed(1)}%<br>
+                <small>Based on topography, soil, climate, and land use</small>
+            `);
+            
+            habitatLayer.addLayer(polygon);
+        });
+
+        // Add conservation priority areas
+        prairieData.forEach(prairie => {
+            if (prairie.connectivity > 70 && prairie.quality < 80) {
+                const priorityMarker = L.marker([prairie.lat, prairie.lng], {
+                    icon: L.divIcon({
+                        className: 'priority-marker',
+                        html: '⭐',
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    })
+                });
+                
+                priorityMarker.bindPopup(`
+                    <strong>High Priority Site</strong><br>
+                    ${prairie.name}<br>
+                    <em>High connectivity potential with restoration opportunities</em>
+                `);
+                
+                priorityLayer.addLayer(priorityMarker);
+            }
+        });
+
+        // Add layers to map initially
+        prairieLayer.addTo(map);
+
+        // Layer controls
+        document.getElementById('prairies').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                map.addLayer(prairieLayer);
+            } else {
+                map.removeLayer(prairieLayer);
+            }
+        });
+
+        document.getElementById('connectivity').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                map.addLayer(connectivityLayer);
+            } else {
+                map.removeLayer(connectivityLayer);
+            }
+        });
+
+        document.getElementById('species').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                map.addLayer(speciesLayer);
+            } else {
+                map.removeLayer(speciesLayer);
+            }
+        });
+
+        document.getElementById('habitat').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                map.addLayer(habitatLayer);
+            } else {
+                map.removeLayer(habitatLayer);
+            }
+        });
+
+        document.getElementById('priority').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                map.addLayer(priorityLayer);
+            } else {
+                map.removeLayer(priorityLayer);
+            }
+        });
+
+        // Filter functionality
+        let currentPrairies = [...prairieData];
+
+        function updatePrairieDisplay() {
+            const connectivityMin = document.getElementById('connectivity-filter').value;
+            const speciesMin = document.getElementById('species-filter').value;
+            
+            prairieLayer.clearLayers();
+            
+            currentPrairies.forEach(prairie => {
+                if (prairie.connectivity >= connectivityMin && prairie.species >= speciesMin) {
+                    const marker = L.circleMarker([prairie.lat, prairie.lng], {
+                        radius: Math.sqrt(prairie.area) / 2 + 5,
+                        fillColor: getQualityColor(prairie.quality),
+                        color: '#2c5530',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    });
+
+                    const popupContent = `
+                        <div class="popup-content">
+                            <h3>${prairie.name}</h3>
+                            <div class="popup-metric">
+                                <span>Area:</span>
+                                <strong>${prairie.area} hectares</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Habitat Quality:</span>
+                                <strong>${prairie.quality}%</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Connectivity Score:</span>
+                                <strong>${prairie.connectivity}/100</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Species Count:</span>
+                                <strong>${prairie.species} species</strong>
+                            </div>
+                            <p style="margin-top: 10px; font-style: italic; color: #666;">
+                                ${prairie.description}
+                            </p>
+                            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 0.9em;">
+                                <strong>Data Sources:</strong> Field surveys, iNaturalist observations, ML habitat model
+                            </div>
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupContent);
+                    prairieLayer.addLayer(marker);
+                }
+            });
+        }
+
+        document.getElementById('connectivity-filter').addEventListener('input', updatePrairieDisplay);
+        document.getElementById('species-filter').addEventListener('input', updatePrairieDisplay);
+
+        // Add scale
+        L.control.scale().addTo(map);
+
+        // Custom info box
+        const info = L.control();
+        info.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+
+        info.update = function (props) {
+            this._div.innerHTML = `
+                <div style="background: rgba(255,255,255,0.95); padding: 10px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+                    <h4 style="color: #2c5530; margin: 0 0 5px 0;">🌿 Driftless Hill Prairies</h4>
+                    <small style="color: #666;">Click markers for detailed site information</small>
+                </div>
+            `;
+        };
+
+        info.addTo(map);
+    </script>
+</body>
+</html>
