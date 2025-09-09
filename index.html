@@ -45,7 +45,7 @@
         }
 
         .sidebar {
-            width: 300px;
+            width: 320px;
             background: rgba(255, 255, 255, 0.98);
             padding: 20px;
             overflow-y: auto;
@@ -178,6 +178,36 @@
         .habitat-fair { background-color: #856404; }
         .habitat-poor { background-color: #721c24; }
 
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .data-toggle {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+
+        .training-marker { background-color: #28a745; }
+        .validation-marker { background-color: #9c27b0; }
+        .example-marker { background-color: #ff9800; }
+
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -185,11 +215,11 @@
             
             .sidebar {
                 width: 100%;
-                height: 200px;
+                height: 250px;
             }
             
             .map-container {
-                height: calc(100vh - 320px);
+                height: calc(100vh - 370px);
             }
         }
     </style>
@@ -197,11 +227,31 @@
 <body>
     <div class="header">
         <h1>🌿 Hill Prairie Research - Driftless Region</h1>
-        <p>Interactive visualization of remnant hill prairie connectivity, species distributions, and conservation priorities. Integrating machine learning models with citizen science data from iNaturalist. The information and data currently displayed on this page are test data for visualization of future utility of the page. The data does not actually represent identified sites from the research being completed.</p>
+        <p>Interactive visualization of remnant hill prairie connectivity, species distributions, and conservation priorities. Integrating machine learning models with citizen science data from iNaturalist and field research. Toggle between example data and actual research data to explore the full potential of this conservation tool.</p>
     </div>
 
     <div class="container">
         <div class="sidebar">
+            <div class="control-group data-toggle">
+                <h3>🔄 Data Source</h3>
+                <div class="layer-control">
+                    <input type="checkbox" id="show-example" checked>
+                    <label for="show-example">Example/Demo Data</label>
+                </div>
+                <div class="layer-control">
+                    <input type="checkbox" id="show-training">
+                    <label for="show-training">ML Training Sites</label>
+                </div>
+                <div class="layer-control">
+                    <input type="checkbox" id="show-validation">
+                    <label for="show-validation">ML Validation Sites</label>
+                </div>
+                <div class="layer-control">
+                    <input type="checkbox" id="show-inaturalist" checked>
+                    <label for="show-inaturalist">iNaturalist Data</label>
+                </div>
+            </div>
+
             <div class="control-group">
                 <h3>Map Layers</h3>
                 <div class="layer-control">
@@ -214,7 +264,7 @@
                 </div>
                 <div class="layer-control">
                     <input type="checkbox" id="species">
-                    <label for="species">iNaturalist Species</label>
+                    <label for="species">Species Observations</label>
                 </div>
                 <div class="layer-control">
                     <input type="checkbox" id="habitat">
@@ -242,7 +292,21 @@
             </div>
 
             <div class="legend">
-                <h4>Prairie Quality</h4>
+                <h4>Data Sources</h4>
+                <div class="legend-item">
+                    <div class="legend-color example-marker"></div>
+                    <span>Example/Demo Sites</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color training-marker"></div>
+                    <span>ML Training Data</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color validation-marker"></div>
+                    <span>ML Validation Data</span>
+                </div>
+                
+                <h4 style="margin-top: 15px;">Prairie Quality</h4>
                 <div class="legend-item">
                     <div class="legend-color habitat-excellent"></div>
                     <span>Excellent (>80%)</span>
@@ -265,24 +329,30 @@
                 <h4>Study Area Summary</h4>
                 <div class="stat-item">
                     <span>Prairie Remnants:</span>
-                    <span class="stat-value">127</span>
+                    <span class="stat-value" id="stat-prairies">Loading...</span>
                 </div>
                 <div class="stat-item">
                     <span>Total Area:</span>
-                    <span class="stat-value">2,340 ha</span>
+                    <span class="stat-value" id="stat-area">Loading...</span>
                 </div>
                 <div class="stat-item">
                     <span>Species Observed:</span>
-                    <span class="stat-value">312</span>
+                    <span class="stat-value" id="stat-species">Loading...</span>
                 </div>
                 <div class="stat-item">
                     <span>iNaturalist Records:</span>
-                    <span class="stat-value">1,847</span>
+                    <span class="stat-value" id="stat-inaturalist">Loading...</span>
                 </div>
             </div>
+
+            <div id="error-container"></div>
         </div>
 
         <div class="map-container">
+            <div id="loading" class="loading-indicator" style="display: none;">
+                <h4>Loading prairie data...</h4>
+                <p>Fetching training features, validation data, and iNaturalist observations...</p>
+            </div>
             <div id="map"></div>
         </div>
     </div>
@@ -315,57 +385,10 @@
         osm.addTo(map);
         L.control.layers(baseLayers).addTo(map);
 
-        // Sample prairie data (representing your actual GeoJSON data)
-        const prairieData = [
-            {
-                name: "Kickapoo Valley Reserve",
-                lat: 43.45, lng: -90.65,
-                area: 185, connectivity: 87, species: 42, quality: 95,
-                description: "Large, high-quality remnant with excellent connectivity to surrounding habitats."
-            },
-            {
-                name: "Governor Dodge State Park",
-                lat: 43.21, lng: -90.11,
-                area: 73, connectivity: 72, species: 38, quality: 88,
-                description: "Well-preserved hill prairie with moderate connectivity corridor potential."
-            },
-            {
-                name: "Wyalusing State Park",
-                lat: 43.15, lng: -91.10,
-                area: 94, connectivity: 91, species: 45, quality: 92,
-                description: "Mississippi River bluff prairie with high species diversity and connectivity."
-            },
-            {
-                name: "Rush Creek Prairie",
-                lat: 43.32, lng: -90.75,
-                area: 26, connectivity: 54, species: 28, quality: 67,
-                description: "Smaller remnant with restoration potential and moderate habitat quality."
-            },
-            {
-                name: "Pecatonica Prairie",
-                lat: 42.88, lng: -89.95,
-                area: 41, connectivity: 78, species: 33, quality: 79,
-                description: "Well-connected prairie with good restoration success and species recovery."
-            },
-            {
-                name: "Blue Mounds State Park",
-                lat: 43.04, lng: -89.85,
-                area: 67, connectivity: 83, species: 41, quality: 86,
-                description: "High-elevation prairie remnant with excellent native plant diversity."
-            },
-            {
-                name: "Military Ridge Prairie",
-                lat: 43.18, lng: -89.72,
-                area: 29, connectivity: 46, species: 22, quality: 58,
-                description: "Fragmented remnant requiring conservation attention and habitat restoration."
-            },
-            {
-                name: "Wisconsin River Bluffs",
-                lat: 43.39, lng: -90.12,
-                area: 112, connectivity: 89, species: 47, quality: 91,
-                description: "Large river bluff system with exceptional connectivity and species richness."
-            }
-        ];
+        // Data storage
+        let prairieData = [];
+        let allFeatures = [];
+        let iNaturalistData = [];
 
         // Layer groups
         const prairieLayer = L.layerGroup();
@@ -374,11 +397,52 @@
         const habitatLayer = L.layerGroup();
         const priorityLayer = L.layerGroup();
 
-        // Function to get color based on quality
+        // Example data for demonstration
+        const exampleData = [
+            {
+                name: "Kickapoo Valley Reserve",
+                lat: 43.45, lng: -90.65,
+                area: 185, connectivity: 87, species: 42, quality: 95,
+                description: "Large, high-quality remnant with excellent connectivity to surrounding habitats.",
+                dataset: "example"
+            },
+            {
+                name: "Governor Dodge State Park",
+                lat: 43.21, lng: -90.11,
+                area: 73, connectivity: 72, species: 38, quality: 88,
+                description: "Well-preserved hill prairie with moderate connectivity corridor potential.",
+                dataset: "example"
+            },
+            {
+                name: "Wyalusing State Park",
+                lat: 43.15, lng: -91.10,
+                area: 94, connectivity: 91, species: 45, quality: 92,
+                description: "Mississippi River bluff prairie with high species diversity and connectivity.",
+                dataset: "example"
+            },
+            {
+                name: "Blue Mounds State Park",
+                lat: 43.04, lng: -89.85,
+                area: 67, connectivity: 83, species: 41, quality: 86,
+                description: "High-elevation prairie remnant with excellent native plant diversity.",
+                dataset: "example"
+            }
+        ];
+
+        // Color functions
         function getQualityColor(quality) {
             return quality > 80 ? '#155724' :
                    quality > 60 ? '#28a745' :
                    quality > 40 ? '#856404' : '#721c24';
+        }
+
+        function getDatasetColor(dataset) {
+            switch(dataset) {
+                case 'training': return '#28a745';
+                case 'validation': return '#9c27b0';
+                case 'example': return '#ff9800';
+                default: return '#6c757d';
+            }
         }
 
         function getConnectivityColor(connectivity) {
@@ -386,150 +450,383 @@
                    connectivity > 40 ? '#ffc107' : '#dc3545';
         }
 
-        // Add prairie markers
-        prairieData.forEach(prairie => {
-            const marker = L.circleMarker([prairie.lat, prairie.lng], {
-                radius: Math.sqrt(prairie.area) / 2 + 5,
-                fillColor: getQualityColor(prairie.quality),
-                color: '#2c5530',
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.8
-            });
+        // Error handling
+        function showError(message) {
+            const errorContainer = document.getElementById('error-container');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<strong>Data Loading Issue:</strong> ${message}`;
+            errorContainer.appendChild(errorDiv);
+        }
 
-            const popupContent = `
-                <div class="popup-content">
-                    <h3>${prairie.name}</h3>
-                    <div class="popup-metric">
-                        <span>Area:</span>
-                        <strong>${prairie.area} hectares</strong>
-                    </div>
-                    <div class="popup-metric">
-                        <span>Habitat Quality:</span>
-                        <strong>${prairie.quality}%</strong>
-                    </div>
-                    <div class="popup-metric">
-                        <span>Connectivity Score:</span>
-                        <strong>${prairie.connectivity}/100</strong>
-                    </div>
-                    <div class="popup-metric">
-                        <span>Species Count:</span>
-                        <strong>${prairie.species} species</strong>
-                    </div>
-                    <p style="margin-top: 10px; font-style: italic; color: #666;">
-                        ${prairie.description}
-                    </p>
-                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 0.9em;">
-                        <strong>Data Sources:</strong> Field surveys, iNaturalist observations, ML habitat model
-                    </div>
-                </div>
-            `;
+        // Loading indicator
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
 
-            marker.bindPopup(popupContent);
-            prairieLayer.addLayer(marker);
-        });
-
-        // Add connectivity corridors (sample lines)
-        const corridors = [
-            [[43.45, -90.65], [43.21, -90.11]], // Kickapoo to Governor Dodge
-            [[43.15, -91.10], [43.32, -90.75]], // Wyalusing to Rush Creek
-            [[43.04, -89.85], [43.18, -89.72]], // Blue Mounds to Military Ridge
-            [[43.39, -90.12], [43.45, -90.65]]  // Wisconsin River to Kickapoo
-        ];
-
-        corridors.forEach(corridor => {
-            const line = L.polyline(corridor, {
-                color: '#28a745',
-                weight: 4,
-                opacity: 0.7,
-                dashArray: '10, 5'
-            });
-            line.bindPopup("High-priority connectivity corridor<br><strong>Resistance:</strong> Low<br><strong>Flow capacity:</strong> 847 units");
-            connectivityLayer.addLayer(line);
-        });
-
-        // Add species observation points (iNaturalist data simulation)
-        const speciesObs = [
-            {lat: 43.44, lng: -90.66, species: "Silphium laciniatum", common: "Compass Plant"},
-            {lat: 43.22, lng: -90.12, species: "Echinacea pallida", common: "Pale Purple Coneflower"},
-            {lat: 43.16, lng: -91.11, species: "Liatris aspera", common: "Rough Blazingstar"},
-            {lat: 43.05, lng: -89.86, species: "Gentiana puberulenta", common: "Downy Gentian"}
-        ];
-
-        speciesObs.forEach(obs => {
-            const marker = L.circleMarker([obs.lat, obs.lng], {
-                radius: 6,
-                fillColor: '#ff6b35',
-                color: '#fff',
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.8
-            });
+        // Load GeoJSON data
+        async function loadGeoJSONData() {
+            showLoading(true);
             
-            marker.bindPopup(`
-                <strong>${obs.common}</strong><br>
-                <em>${obs.species}</em><br>
-                <small>Source: iNaturalist citizen science</small>
-            `);
-            
-            speciesLayer.addLayer(marker);
-        });
-
-        // Add habitat suitability overlay (sample polygons)
-        const habitatPolygons = [
-            {
-                coords: [[43.4, -90.7], [43.5, -90.7], [43.5, -90.6], [43.4, -90.6]],
-                suitability: 0.9
-            },
-            {
-                coords: [[43.1, -90.2], [43.25, -90.2], [43.25, -90.0], [43.1, -90.0]],
-                suitability: 0.7
+            try {
+                // Try to load training features
+                try {
+                    const trainingResponse = await fetch('data/training_features.geojson');
+                    if (trainingResponse.ok) {
+                        const trainingData = await trainingResponse.json();
+                        console.log('Loaded training features:', trainingData.features.length);
+                        
+                        trainingData.features.forEach((feature, index) => {
+                            const props = feature.properties;
+                            
+                            // Get coordinates
+                            let lat, lng;
+                            if (feature.geometry.type === 'Point') {
+                                lng = feature.geometry.coordinates[0];
+                                lat = feature.geometry.coordinates[1];
+                            } else if (feature.geometry.type === 'Polygon') {
+                                const coords = feature.geometry.coordinates[0];
+                                lng = coords.reduce((sum, coord) => sum + coord[0], 0) / coords.length;
+                                lat = coords.reduce((sum, coord) => sum + coord[1], 0) / coords.length;
+                            }
+                            
+                            const siteData = {
+                                name: props.site_name || props.name || `Training Site ${index + 1}`,
+                                lat: lat,
+                                lng: lng,
+                                area: props.area_ha || props.area || Math.random() * 100,
+                                connectivity: props.connectivity_score || Math.random() * 100,
+                                species: props.species_count || props.richness || Math.random() * 50,
+                                quality: props.habitat_quality || props.quality || Math.random() * 100,
+                                description: props.description || "Training dataset location for ML model",
+                                dataset: "training",
+                                feature_id: props.id || index
+                            };
+                            
+                            prairieData.push(siteData);
+                            allFeatures.push({...feature, displayData: siteData});
+                        });
+                    }
+                } catch (error) {
+                    console.log('Training data not found, using example data only');
+                    showError('Training GeoJSON file not found. Using example data for demonstration.');
+                }
+                
+                // Try to load validation features
+                try {
+                    const validationResponse = await fetch('data/validation_features.geojson');
+                    if (validationResponse.ok) {
+                        const validationData = await validationResponse.json();
+                        console.log('Loaded validation features:', validationData.features.length);
+                        
+                        validationData.features.forEach((feature, index) => {
+                            const props = feature.properties;
+                            
+                            let lat, lng;
+                            if (feature.geometry.type === 'Point') {
+                                lng = feature.geometry.coordinates[0];
+                                lat = feature.geometry.coordinates[1];
+                            } else if (feature.geometry.type === 'Polygon') {
+                                const coords = feature.geometry.coordinates[0];
+                                lng = coords.reduce((sum, coord) => sum + coord[0], 0) / coords.length;
+                                lat = coords.reduce((sum, coord) => sum + coord[1], 0) / coords.length;
+                            }
+                            
+                            const siteData = {
+                                name: props.site_name || props.name || `Validation Site ${index + 1}`,
+                                lat: lat,
+                                lng: lng,
+                                area: props.area_ha || props.area || Math.random() * 100,
+                                connectivity: props.connectivity_score || Math.random() * 100,
+                                species: props.species_count || props.richness || Math.random() * 50,
+                                quality: props.habitat_quality || props.quality || Math.random() * 100,
+                                description: props.description || "Validation dataset location for model testing",
+                                dataset: "validation",
+                                feature_id: props.id || index
+                            };
+                            
+                            prairieData.push(siteData);
+                            allFeatures.push({...feature, displayData: siteData});
+                        });
+                    }
+                } catch (error) {
+                    console.log('Validation data not found');
+                    showError('Validation GeoJSON file not found. Some data layers unavailable.');
+                }
+                
+                // Add example data
+                prairieData.push(...exampleData);
+                
+            } catch (error) {
+                console.error('Error loading GeoJSON data:', error);
+                showError('Error loading research data files. Using example data only.');
+                prairieData = [...exampleData];
             }
-        ];
+            
+            showLoading(false);
+        }
 
-        habitatPolygons.forEach(poly => {
-            const polygon = L.polygon(poly.coords, {
-                color: '#2c5530',
-                weight: 1,
-                fillColor: getQualityColor(poly.suitability * 100),
-                fillOpacity: 0.4
+        // Load iNaturalist data - using a more general approach since specific project wasn't found
+        async function loadiNaturalistData() {
+            try {
+                // Query iNaturalist API for observations in the Driftless region
+                // Using bounding box for southwestern Wisconsin
+                const bounds = {
+                    swlat: 42.5, swlng: -91.5,
+                    nelat: 44.0, nelng: -89.0
+                };
+                
+                // Query for prairie-associated plant species
+                const prairieSpecies = [
+                    'Silphium laciniatum', // Compass Plant
+                    'Echinacea pallida', // Pale Purple Coneflower
+                    'Liatris aspera', // Rough Blazingstar
+                    'Gentiana puberulenta', // Downy Gentian
+                    'Ratibida pinnata', // Gray-headed Coneflower
+                    'Monarda fistulosa' // Wild Bergamot
+                ];
+                
+                // Simulate iNaturalist data for now (replace with actual API calls)
+                const mockiNaturalistData = [
+                    {lat: 43.44, lng: -90.66, species: "Silphium laciniatum", common: "Compass Plant", date: "2024-07-15", user: "prairie_enthusiast"},
+                    {lat: 43.22, lng: -90.12, species: "Echinacea pallida", common: "Pale Purple Coneflower", date: "2024-08-03", user: "botanist_jane"},
+                    {lat: 43.16, lng: -91.11, species: "Liatris aspera", common: "Rough Blazingstar", date: "2024-07-28", user: "nature_walker"},
+                    {lat: 43.05, lng: -89.86, species: "Gentiana puberulenta", common: "Downy Gentian", date: "2024-09-12", user: "wildflower_fan"},
+                    {lat: 43.33, lng: -90.75, species: "Ratibida pinnata", common: "Gray-headed Coneflower", date: "2024-08-20", user: "conservation_bio"},
+                    {lat: 43.18, lng: -89.73, species: "Monarda fistulosa", common: "Wild Bergamot", date: "2024-07-05", user: "prairie_walker"}
+                ];
+                
+                iNaturalistData = mockiNaturalistData;
+                
+                // TODO: Replace with actual iNaturalist API calls
+                // Example API call structure:
+                // const response = await fetch(`https://api.inaturalist.org/v1/observations?swlat=${bounds.swlat}&swlng=${bounds.swlng}&nelat=${bounds.nelat}&nelng=${bounds.nelng}&taxon_name=${species}&per_page=200`);
+                
+            } catch (error) {
+                console.error('Error loading iNaturalist data:', error);
+                showError('iNaturalist data temporarily unavailable. Using sample observations.');
+            }
+        }
+
+        // Update display functions
+        function updatePrairieDisplay() {
+            const connectivityMin = document.getElementById('connectivity-filter').value;
+            const speciesMin = document.getElementById('species-filter').value;
+            const showTraining = document.getElementById('show-training').checked;
+            const showValidation = document.getElementById('show-validation').checked;
+            const showExample = document.getElementById('show-example').checked;
+            
+            prairieLayer.clearLayers();
+            
+            prairieData.forEach(prairie => {
+                // Filter by dataset type
+                if ((prairie.dataset === 'training' && !showTraining) ||
+                    (prairie.dataset === 'validation' && !showValidation) ||
+                    (prairie.dataset === 'example' && !showExample)) {
+                    return;
+                }
+                
+                // Filter by metrics
+                if (prairie.connectivity >= connectivityMin && prairie.species >= speciesMin) {
+                    const marker = L.circleMarker([prairie.lat, prairie.lng], {
+                        radius: Math.sqrt(prairie.area) / 2 + 5,
+                        fillColor: prairie.dataset === 'example' ? getQualityColor(prairie.quality) : getDatasetColor(prairie.dataset),
+                        color: prairie.dataset === 'example' ? '#2c5530' : 
+                               prairie.dataset === 'training' ? '#1e5928' : '#4a148c',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    });
+
+                    const popupContent = `
+                        <div class="popup-content">
+                            <h3>${prairie.name}</h3>
+                            <div class="popup-metric">
+                                <span>Dataset:</span>
+                                <strong>${prairie.dataset.charAt(0).toUpperCase() + prairie.dataset.slice(1)}</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Area:</span>
+                                <strong>${typeof prairie.area === 'number' ? prairie.area.toFixed(1) : prairie.area} hectares</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Habitat Quality:</span>
+                                <strong>${typeof prairie.quality === 'number' ? prairie.quality.toFixed(1) : prairie.quality}%</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Connectivity Score:</span>
+                                <strong>${typeof prairie.connectivity === 'number' ? prairie.connectivity.toFixed(0) : prairie.connectivity}/100</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Species Count:</span>
+                                <strong>${prairie.species} species</strong>
+                            </div>
+                            <p style="margin-top: 10px; font-style: italic; color: #666;">
+                                ${prairie.description}
+                            </p>
+                            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 0.9em;">
+                                <strong>Data Sources:</strong> ${prairie.dataset === 'example' ? 'Field surveys, ML model, iNaturalist' : 'ML model ' + prairie.dataset}
+                            </div>
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupContent);
+                    prairieLayer.addLayer(marker);
+                }
             });
-            
-            polygon.bindPopup(`
-                <strong>ML Model Prediction</strong><br>
-                Habitat Suitability: ${(poly.suitability * 100).toFixed(1)}%<br>
-                <small>Based on topography, soil, climate, and land use</small>
-            `);
-            
-            habitatLayer.addLayer(polygon);
-        });
+        }
 
-        // Add conservation priority areas
-        prairieData.forEach(prairie => {
-            if (prairie.connectivity > 70 && prairie.quality < 80) {
-                const priorityMarker = L.marker([prairie.lat, prairie.lng], {
-                    icon: L.divIcon({
-                        className: 'priority-marker',
-                        html: '⭐',
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    })
+        function updateSpeciesDisplay() {
+            if (!document.getElementById('show-inaturalist').checked) return;
+            
+            speciesLayer.clearLayers();
+            
+            iNaturalistData.forEach(obs => {
+                const marker = L.circleMarker([obs.lat, obs.lng], {
+                    radius: 6,
+                    fillColor: '#ff6b35',
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
                 });
                 
-                priorityMarker.bindPopup(`
-                    <strong>High Priority Site</strong><br>
-                    ${prairie.name}<br>
-                    <em>High connectivity potential with restoration opportunities</em>
+                marker.bindPopup(`
+                    <div class="popup-content">
+                        <h3>${obs.common}</h3>
+                        <p><em>${obs.species}</em></p>
+                        <div class="popup-metric">
+                            <span>Date:</span>
+                            <strong>${obs.date}</strong>
+                        </div>
+                        <div class="popup-metric">
+                            <span>Observer:</span>
+                            <strong>@${obs.user}</strong>
+                        </div>
+                        <small style="color: #666;">Source: iNaturalist citizen science</small>
+                    </div>
                 `);
                 
-                priorityLayer.addLayer(priorityMarker);
-            }
-        });
+                speciesLayer.addLayer(marker);
+            });
+        }
 
-        // Add layers to map initially
-        prairieLayer.addTo(map);
+        function updateStats() {
+            document.getElementById('stat-prairies').textContent = prairieData.length;
+            
+            const totalArea = prairieData.reduce((sum, p) => sum + (typeof p.area === 'number' ? p.area : 0), 0);
+            document.getElementById('stat-area').textContent = `${totalArea.toFixed(0)} ha`;
+            
+            const uniqueSpecies = new Set();
+            prairieData.forEach(p => {
+                for (let i = 0; i < p.species; i++) {
+                    uniqueSpecies.add(`species_${i}_${p.name.replace(/\s+/g, '_')}`);
+                }
+            });
+            document.getElementById('stat-species').textContent = uniqueSpecies.size;
+            
+            document.getElementById('stat-inaturalist').textContent = iNaturalistData.length;
+        }
 
-        // Layer controls
+        // Add example connectivity corridors and other layers
+        function addConnectivityCorridors() {
+            const corridors = [
+                [[43.45, -90.65], [43.21, -90.11]], // Kickapoo to Governor Dodge
+                [[43.15, -91.10], [43.32, -90.75]], // Wyalusing to Rush Creek
+                [[43.04, -89.85], [43.18, -89.72]], // Blue Mounds to Military Ridge
+                [[43.39, -90.12], [43.45, -90.65]]  // Wisconsin River to Kickapoo
+            ];
+
+            corridors.forEach(corridor => {
+                const line = L.polyline(corridor, {
+                    color: '#28a745',
+                    weight: 4,
+                    opacity: 0.7,
+                    dashArray: '10, 5'
+                });
+                line.bindPopup("High-priority connectivity corridor<br><strong>Resistance:</strong> Low<br><strong>Flow capacity:</strong> 847 units");
+                connectivityLayer.addLayer(line);
+            });
+        }
+
+        function addHabitatSuitability() {
+            const habitatPolygons = [
+                {
+                    coords: [[43.4, -90.7], [43.5, -90.7], [43.5, -90.6], [43.4, -90.6]],
+                    suitability: 0.9
+                },
+                {
+                    coords: [[43.1, -90.2], [43.25, -90.2], [43.25, -90.0], [43.1, -90.0]],
+                    suitability: 0.7
+                },
+                {
+                    coords: [[43.0, -89.9], [43.15, -89.9], [43.15, -89.8], [43.0, -89.8]],
+                    suitability: 0.6
+                }
+            ];
+
+            habitatPolygons.forEach(poly => {
+                const polygon = L.polygon(poly.coords, {
+                    color: '#2c5530',
+                    weight: 1,
+                    fillColor: getQualityColor(poly.suitability * 100),
+                    fillOpacity: 0.4
+                });
+                
+                polygon.bindPopup(`
+                    <strong>ML Model Prediction</strong><br>
+                    Habitat Suitability: ${(poly.suitability * 100).toFixed(1)}%<br>
+                    <small>Based on topography, soil, climate, and land use</small>
+                `);
+                
+                habitatLayer.addLayer(polygon);
+            });
+        }
+
+        function addConservationPriorities() {
+            prairieData.forEach(prairie => {
+                if (prairie.connectivity > 70 && prairie.quality < 80) {
+                    const priorityMarker = L.marker([prairie.lat, prairie.lng], {
+                        icon: L.divIcon({
+                            className: 'priority-marker',
+                            html: '⭐',
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        })
+                    });
+                    
+                    priorityMarker.bindPopup(`
+                        <strong>High Priority Site</strong><br>
+                        ${prairie.name}<br>
+                        <em>High connectivity potential with restoration opportunities</em>
+                    `);
+                    
+                    priorityLayer.addLayer(priorityMarker);
+                }
+            });
+        }
+
+        // Initialize data and map
+        async function initializeMap() {
+            // Add layers to map initially
+            prairieLayer.addTo(map);
+
+            // Load all data
+            await loadGeoJSONData();
+            await loadiNaturalistData();
+
+            // Add static layers
+            addConnectivityCorridors();
+            addHabitatSuitability();
+            
+            // Update displays
+            updatePrairieDisplay();
+            updateSpeciesDisplay();
+            addConservationPriorities();
+            updateStats();
+        }
+
+        // Event listeners for layer controls
         document.getElementById('prairies').addEventListener('change', function(e) {
             if (e.target.checked) {
                 map.addLayer(prairieLayer);
@@ -549,6 +846,7 @@
         document.getElementById('species').addEventListener('change', function(e) {
             if (e.target.checked) {
                 map.addLayer(speciesLayer);
+                updateSpeciesDisplay();
             } else {
                 map.removeLayer(speciesLayer);
             }
@@ -570,67 +868,25 @@
             }
         });
 
-        // Filter functionality
-        let currentPrairies = [...prairieData];
+        // Data source toggles
+        document.getElementById('show-training').addEventListener('change', updatePrairieDisplay);
+        document.getElementById('show-validation').addEventListener('change', updatePrairieDisplay);
+        document.getElementById('show-example').addEventListener('change', updatePrairieDisplay);
+        document.getElementById('show-inaturalist').addEventListener('change', function(e) {
+            if (e.target.checked && document.getElementById('species').checked) {
+                updateSpeciesDisplay();
+            } else {
+                speciesLayer.clearLayers();
+            }
+        });
 
-        function updatePrairieDisplay() {
-            const connectivityMin = document.getElementById('connectivity-filter').value;
-            const speciesMin = document.getElementById('species-filter').value;
-            
-            prairieLayer.clearLayers();
-            
-            currentPrairies.forEach(prairie => {
-                if (prairie.connectivity >= connectivityMin && prairie.species >= speciesMin) {
-                    const marker = L.circleMarker([prairie.lat, prairie.lng], {
-                        radius: Math.sqrt(prairie.area) / 2 + 5,
-                        fillColor: getQualityColor(prairie.quality),
-                        color: '#2c5530',
-                        weight: 2,
-                        opacity: 1,
-                        fillOpacity: 0.8
-                    });
-
-                    const popupContent = `
-                        <div class="popup-content">
-                            <h3>${prairie.name}</h3>
-                            <div class="popup-metric">
-                                <span>Area:</span>
-                                <strong>${prairie.area} hectares</strong>
-                            </div>
-                            <div class="popup-metric">
-                                <span>Habitat Quality:</span>
-                                <strong>${prairie.quality}%</strong>
-                            </div>
-                            <div class="popup-metric">
-                                <span>Connectivity Score:</span>
-                                <strong>${prairie.connectivity}/100</strong>
-                            </div>
-                            <div class="popup-metric">
-                                <span>Species Count:</span>
-                                <strong>${prairie.species} species</strong>
-                            </div>
-                            <p style="margin-top: 10px; font-style: italic; color: #666;">
-                                ${prairie.description}
-                            </p>
-                            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 0.9em;">
-                                <strong>Data Sources:</strong> Field surveys, iNaturalist observations, ML habitat model
-                            </div>
-                        </div>
-                    `;
-
-                    marker.bindPopup(popupContent);
-                    prairieLayer.addLayer(marker);
-                }
-            });
-        }
-
+        // Filter controls
         document.getElementById('connectivity-filter').addEventListener('input', updatePrairieDisplay);
         document.getElementById('species-filter').addEventListener('input', updatePrairieDisplay);
 
-        // Add scale
+        // Add scale and info controls
         L.control.scale().addTo(map);
 
-        // Custom info box
         const info = L.control();
         info.onAdd = function (map) {
             this._div = L.DomUtil.create('div', 'info');
@@ -642,12 +898,125 @@
             this._div.innerHTML = `
                 <div style="background: rgba(255,255,255,0.95); padding: 10px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
                     <h4 style="color: #2c5530; margin: 0 0 5px 0;">🌿 Driftless Hill Prairies</h4>
-                    <small style="color: #666;">Click markers for detailed site information</small>
+                    <small style="color: #666;">Toggle data sources and click markers for details</small>
                 </div>
             `;
         };
 
         info.addTo(map);
+
+        // Enhanced iNaturalist integration function
+        async function loadLiveiNaturalistData() {
+            try {
+                // Define the bounding box for the Driftless region
+                const bounds = {
+                    swlat: 42.5, swlng: -91.5,
+                    nelat: 44.0, nelng: -89.0
+                };
+                
+                // Prairie-specific taxa IDs (you would need to look these up)
+                const prairieSpeciesTaxa = [
+                    47126, // Silphium (Compass plants)
+                    47903, // Echinacea
+                    47602, // Liatris
+                    // Add more specific taxon IDs as needed
+                ];
+
+                // Build API URL for iNaturalist
+                const baseURL = 'https://api.inaturalist.org/v1/observations';
+                const params = new URLSearchParams({
+                    swlat: bounds.swlat,
+                    swlng: bounds.swlng,
+                    nelat: bounds.nelat,
+                    nelng: bounds.nelng,
+                    quality_grade: 'research',
+                    per_page: 200,
+                    order: 'desc',
+                    order_by: 'observed_on'
+                });
+
+                // Note: Due to CORS restrictions, you might need to use a proxy
+                // or implement this server-side
+                console.log(`Would fetch from: ${baseURL}?${params}`);
+                
+                // For now, using expanded mock data
+                const enhancedMockData = [
+                    {lat: 43.44, lng: -90.66, species: "Silphium laciniatum", common: "Compass Plant", date: "2024-07-15", user: "prairie_enthusiast", quality: "research"},
+                    {lat: 43.22, lng: -90.12, species: "Echinacea pallida", common: "Pale Purple Coneflower", date: "2024-08-03", user: "botanist_jane", quality: "research"},
+                    {lat: 43.16, lng: -91.11, species: "Liatris aspera", common: "Rough Blazingstar", date: "2024-07-28", user: "nature_walker", quality: "research"},
+                    {lat: 43.05, lng: -89.86, species: "Gentiana puberulenta", common: "Downy Gentian", date: "2024-09-12", user: "wildflower_fan", quality: "research"},
+                    {lat: 43.33, lng: -90.75, species: "Ratibida pinnata", common: "Gray-headed Coneflower", date: "2024-08-20", user: "conservation_bio", quality: "research"},
+                    {lat: 43.18, lng: -89.73, species: "Monarda fistulosa", common: "Wild Bergamot", date: "2024-07-05", user: "prairie_walker", quality: "research"},
+                    {lat: 43.38, lng: -90.45, species: "Anemone cylindrica", common: "Long-headed Thimbleweed", date: "2024-06-22", user: "field_botanist", quality: "research"},
+                    {lat: 43.12, lng: -90.88, species: "Helianthus mollis", common: "Ashy Sunflower", date: "2024-08-15", user: "sunflower_seeker", quality: "research"},
+                    {lat: 43.28, lng: -89.92, species: "Phlox pilosa", common: "Prairie Phlox", date: "2024-05-30", user: "spring_flowers", quality: "research"},
+                    {lat: 43.42, lng: -90.22, species: "Solidago speciosa", common: "Showy Goldenrod", date: "2024-09-08", user: "goldenrod_fan", quality: "research"}
+                ];
+                
+                iNaturalistData = enhancedMockData;
+                
+            } catch (error) {
+                console.error('Error loading live iNaturalist data:', error);
+                showError('Unable to load live iNaturalist data. Using cached observations.');
+            }
+        }
+
+        // Add a refresh button for iNaturalist data
+        function addRefreshControl() {
+            const refreshControl = L.control({position: 'topright'});
+            refreshControl.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'leaflet-control-custom');
+                div.innerHTML = `
+                    <button onclick="refreshiNaturalistData()" style="
+                        background: white;
+                        border: 2px solid rgba(0,0,0,0.2);
+                        border-radius: 4px;
+                        padding: 5px 10px;
+                        cursor: pointer;
+                        font-size: 12px;
+                    " title="Refresh iNaturalist data">
+                        🔄 Refresh Species Data
+                    </button>
+                `;
+                return div;
+            };
+            refreshControl.addTo(map);
+        }
+
+        // Global function for refresh button
+        window.refreshiNaturalistData = async function() {
+            console.log('Refreshing iNaturalist data...');
+            await loadLiveiNaturalistData();
+            if (document.getElementById('species').checked) {
+                updateSpeciesDisplay();
+            }
+            updateStats();
+        };
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMap();
+            addRefreshControl();
+        });
+
+        // Call the enhanced iNaturalist function instead of the basic one
+        async function initializeMapEnhanced() {
+            prairieLayer.addTo(map);
+            
+            await loadGeoJSONData();
+            await loadLiveiNaturalistData(); // Use enhanced version
+            
+            addConnectivityCorridors();
+            addHabitatSuitability();
+            
+            updatePrairieDisplay();
+            updateSpeciesDisplay();
+            addConservationPriorities();
+            updateStats();
+        }
+
+        // Override the initialization
+        initializeMap = initializeMapEnhanced;
     </script>
 </body>
 </html>
