@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data (large files - add specific ones you don't want in git)
+*.tif
+*.img
+*.zip
+data/raw/large_rasters/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# QGIS
+*.qgs~
+*.qgz~
