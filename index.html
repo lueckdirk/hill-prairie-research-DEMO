@@ -45,7 +45,7 @@
         }
 
         .sidebar {
-            width: 320px;
+            width: 350px;
             background: rgba(255, 255, 255, 0.98);
             padding: 20px;
             overflow-y: auto;
@@ -204,9 +204,45 @@
             border-left-color: #2196f3;
         }
 
+        .imagery-toggle {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+        }
+
+        .elevation-toggle {
+            background: #fce4ec;
+            border-left-color: #e91e63;
+        }
+
         .training-marker { background-color: #28a745; }
         .validation-marker { background-color: #9c27b0; }
         .example-marker { background-color: #ff9800; }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        select:focus {
+            border-color: #28a745;
+            outline: none;
+        }
+
+        .layer-opacity {
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .opacity-label {
+            font-size: 0.8em;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
 
         @media (max-width: 768px) {
             .container {
@@ -215,25 +251,25 @@
             
             .sidebar {
                 width: 100%;
-                height: 250px;
+                height: 300px;
             }
             
             .map-container {
-                height: calc(100vh - 370px);
+                height: calc(100vh - 420px);
             }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🌿 Hill Prairie Research - Driftless Region</h1>
-        <p>Interactive visualization of remnant hill prairie connectivity, species distributions, and conservation priorities. Integrating machine learning models with citizen science data from iNaturalist and field research. Toggle between example data and actual research data to explore the full potential of this conservation tool.</p>
+        <h1>Hill Prairie Research - Driftless Region</h1>
+        <p>Interactive visualization of remnant hill prairie connectivity, species distributions, and conservation priorities. Enhanced with Wisconsin DNR imagery and elevation data for comprehensive landscape analysis.</p>
     </div>
 
     <div class="container">
         <div class="sidebar">
             <div class="control-group data-toggle">
-                <h3>🔄 Data Source</h3>
+                <h3>Data Source</h3>
                 <div class="layer-control">
                     <input type="checkbox" id="show-example" checked>
                     <label for="show-example">Example/Demo Data</label>
@@ -250,6 +286,54 @@
                     <input type="checkbox" id="show-inaturalist" checked>
                     <label for="show-inaturalist">iNaturalist Data</label>
                 </div>
+            </div>
+
+            <div class="control-group imagery-toggle">
+                <h3>Wisconsin DNR Imagery</h3>
+                <label for="imagery-select">Historical Imagery:</label>
+                <select id="imagery-select">
+                    <option value="none">Select Imagery Layer</option>
+                    <option value="latest-leaf-on">Latest Leaf-On (Current)</option>
+                    <option value="latest-leaf-off">Latest Leaf-Off (Current)</option>
+                    <option value="2022-leaf-on">2022 Leaf-On</option>
+                    <option value="2020-leaf-on">2020 Leaf-On</option>
+                    <option value="2015-leaf-on">2015 Leaf-On</option>
+                    <option value="2013-leaf-on">2013 Leaf-On</option>
+                    <option value="2010-leaf-off">2010 Leaf-Off</option>
+                    <option value="2008-leaf-on">2008 Leaf-On</option>
+                    <option value="2005-leaf-on">2005 Leaf-On</option>
+                    <option value="1990s-leaf-off">1990s Leaf-Off</option>
+                    <option value="1930s-leaf-on">1930s Leaf-On (Historic)</option>
+                    <option value="cir-leaf-on">Color Infrared</option>
+                </select>
+                <div class="opacity-label">
+                    <span>Opacity:</span>
+                    <span id="imagery-opacity-value">80%</span>
+                </div>
+                <input type="range" class="layer-opacity" id="imagery-opacity" min="0" max="100" value="80">
+            </div>
+
+            <div class="control-group elevation-toggle">
+                <h3>Wisconsin DNR Elevation</h3>
+                <label for="elevation-select">Terrain Analysis:</label>
+                <select id="elevation-select">
+                    <option value="none">Select Elevation Layer</option>
+                    <option value="hillshade-lidar">LiDAR Hillshade</option>
+                    <option value="hillshade-10m">10m Hillshade</option>
+                    <option value="dem-lidar">LiDAR DEM</option>
+                    <option value="dem-lidar-colorized">LiDAR DEM (Colorized)</option>
+                    <option value="dem-10m">10m DEM</option>
+                    <option value="slope-lidar-degree">LiDAR Slope (Degrees)</option>
+                    <option value="slope-lidar-percent">LiDAR Slope (Percent)</option>
+                    <option value="contours-2ft">2ft Contours</option>
+                    <option value="contours-5ft">5ft Contours</option>
+                    <option value="contours-10ft">10ft Contours</option>
+                </select>
+                <div class="opacity-label">
+                    <span>Opacity:</span>
+                    <span id="elevation-opacity-value">70%</span>
+                </div>
+                <input type="range" class="layer-opacity" id="elevation-opacity" min="0" max="100" value="70">
             </div>
 
             <div class="control-group">
@@ -345,67 +429,6 @@
                 </div>
             </div>
 
-            <div class="control-group" style="background: #e8f5e8; border-left-color: #74ac00;">
-                <h3>🔬 Citizen Science Integration</h3>
-                <div style="font-size: 0.9em; line-height: 1.5; color: #444; margin-bottom: 15px;">
-                    <p><strong>iNaturalist</strong> is a global platform where anyone can record and share nature observations. This project integrates community-contributed data to enhance our understanding of prairie ecosystems.</p>
-                    
-                    <p style="margin-top: 10px;"><strong>How you can contribute:</strong></p>
-                    <ul style="margin: 8px 0 0 20px; font-size: 0.85em;">
-                        <li>Take photos of plants, animals, and fungi in prairie areas</li>
-                        <li>Upload observations to help validate our ML models</li>
-                        <li>Contribute to identifying new prairie remnants</li>
-                        <li>Build a comprehensive species database for the Driftless region</li>
-                    </ul>
-                    
-                    <p style="margin-top: 10px; font-weight: 500; color: #2c5530;">
-                        Every observation helps improve conservation efforts and scientific understanding!
-                    </p>
-                </div>
-                
-                <div style="display: flex; gap: 10px; margin-top: 15px;">
-                    <a href="https://www.inaturalist.org/" target="_blank" style="
-                        flex: 1;
-                        display: block;
-                        background: #74ac00;
-                        color: white;
-                        padding: 12px 15px;
-                        text-decoration: none;
-                        border-radius: 5px;
-                        font-weight: bold;
-                        font-size: 0.9em;
-                        text-align: center;
-                        transition: all 0.3s ease;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    " onmouseover="this.style.background='#5f8a00'; this.style.transform='translateY(-1px)'" 
-                       onmouseout="this.style.background='#74ac00'; this.style.transform='translateY(0)'">
-                        🌱 Visit iNaturalist
-                    </a>
-                </div>
-                
-                <div style="text-align: center; margin-top: 10px;">
-                    <a href="https://www.inaturalist.org/projects/driftless-region-prairie-species" target="_blank" style="
-                        display: inline-block;
-                        font-size: 0.85em;
-                        color: #2c5530;
-                        text-decoration: none;
-                        padding: 8px 12px;
-                        background: rgba(44, 85, 48, 0.1);
-                        border-radius: 15px;
-                        transition: all 0.2s ease;
-                    " onmouseover="this.style.background='rgba(44, 85, 48, 0.2)'" 
-                       onmouseout="this.style.background='rgba(44, 85, 48, 0.1)'">
-                        🔗 Join our Driftless Prairie Project
-                    </a>
-                </div>
-                
-                <div style="margin-top: 15px; padding: 10px; background: rgba(116, 172, 0, 0.1); border-radius: 5px; border-left: 3px solid #74ac00;">
-                    <div style="font-size: 0.8em; color: #555;">
-                        <strong>Current Integration:</strong> This map displays {iNaturalist observations count} citizen science observations across the Driftless region, helping researchers identify biodiversity hotspots and validate habitat models.
-                    </div>
-                </div>
-            </div>
-
             <div id="error-container"></div>
         </div>
 
@@ -423,6 +446,9 @@
         // Initialize map centered on Driftless Region
         const map = L.map('map').setView([43.25, -90.8], 10);
 
+        // Wisconsin DNR base URL
+        const WI_DNR_BASE = 'https://dnrmaps.wi.gov/arcgis/rest/services';
+
         // Add base layers
         const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
@@ -436,37 +462,93 @@
             attribution: '© Esri'
         });
 
-        // NAIP Imagery layers for multiple years
-        const naip2024 = L.tileLayer('https://services.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer/tile/{z}/{y}/{x}', {
-            attribution: '© USDA NAIP 2024'
-        });
+        // Wisconsin DNR Imagery layers
+        const imageryLayers = {
+            'latest-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_Latest_Leaf_On/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR'
+            }),
+            'latest-leaf-off': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_Latest_Leaf_Off/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR'
+            }),
+            '2022-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2022_Leaf_On/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 2022'
+            }),
+            '2020-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2020_Leaf_On/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 2020'
+            }),
+            '2015-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2015_Leaf_On/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 2015'
+            }),
+            '2013-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2013_Leaf_On/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 2013'
+            }),
+            '2010-leaf-off': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2010_Leaf_Off/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 2010'
+            }),
+            '2008-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2008_Leaf_On/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 2008'
+            }),
+            '2005-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2005_Leaf_On/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 2005'
+            }),
+            '1990s-leaf-off': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_1990s_Leaf_Off_Raster_Tile/MapServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 1990s'
+            }),
+            '1930s-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_1930s_Leaf_On/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 1930s'
+            }),
+            'cir-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_CIR_Leaf_On_Raster_Tile/MapServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR CIR'
+            })
+        };
 
-        const naip2022 = L.tileLayer('https://gis.apfo.usda.gov/arcgis/rest/services/NAIP/Wisconsin_2022_60cm/ImageServer/tile/{z}/{y}/{x}', {
-            attribution: '© USDA NAIP 2022'
-        });
+        // Wisconsin DNR Elevation layers
+        const elevationLayers = {
+            'hillshade-lidar': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Hillshade_from_LiDAR/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR LiDAR'
+            }),
+            'hillshade-10m': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Hillshade_10m/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 10m'
+            }),
+            'dem-lidar': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_DEM_from_LiDAR/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR LiDAR DEM'
+            }),
+            'dem-lidar-colorized': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_DEM_from_LiDAR_Colorized/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR LiDAR DEM'
+            }),
+            'dem-10m': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_DEM_10m/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 10m DEM'
+            }),
+            'slope-lidar-degree': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Slope_from_LiDAR_Degree/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR LiDAR Slope'
+            }),
+            'slope-lidar-percent': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Slope_from_LiDAR_Percent/ImageServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR LiDAR Slope'
+            }),
+            'contours-2ft': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Contour_from_LiDAR_2_ft/MapServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 2ft Contours'
+            }),
+            'contours-5ft': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Contour_from_LiDAR_5_ft/MapServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 5ft Contours'
+            }),
+            'contours-10ft': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Contour_from_LiDAR_10_ft/MapServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR 10ft Contours'
+            })
+        };
 
-        const naip2020 = L.tileLayer('https://gis.apfo.usda.gov/arcgis/rest/services/NAIP/Wisconsin_2020_60cm/ImageServer/tile/{z}/{y}/{x}', {
-            attribution: '© USDA NAIP 2020'
-        });
-
-        // Leafs-off imagery for better land cover analysis
-        const leafsOff = L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© USGS Topo/Imagery'
-        });
-
-        // Base layer control with expanded options
+        // Base layer control
         const baseLayers = {
             "OpenStreetMap": osm,
-            "Satellite (Current)": satellite,
-            "Terrain": terrain,
-            "NAIP 2024": naip2024,
-            "NAIP 2022": naip2022, 
-            "NAIP 2020": naip2020,
-            "Leafs-off Imagery": leafsOff
+            "Satellite": satellite,
+            "Terrain": terrain
         };
 
         osm.addTo(map);
         L.control.layers(baseLayers).addTo(map);
+
+        // Current overlay layers
+        let currentImageryLayer = null;
+        let currentElevationLayer = null;
 
         // Data storage
         let prairieData = [];
@@ -552,9 +634,51 @@
             }
         }
 
-        function getConnectivityColor(connectivity) {
-            return connectivity > 70 ? '#28a745' :
-                   connectivity > 40 ? '#ffc107' : '#dc3545';
+        // Layer management functions
+        function updateImageryLayer() {
+            const selectedImagery = document.getElementById('imagery-select').value;
+            const opacity = document.getElementById('imagery-opacity').value / 100;
+            
+            // Remove current imagery layer
+            if (currentImageryLayer) {
+                map.removeLayer(currentImageryLayer);
+                currentImageryLayer = null;
+            }
+            
+            // Add new imagery layer if selected
+            if (selectedImagery !== 'none' && imageryLayers[selectedImagery]) {
+                currentImageryLayer = imageryLayers[selectedImagery];
+                currentImageryLayer.setOpacity(opacity);
+                currentImageryLayer.addTo(map);
+                
+                // Handle potential loading errors
+                currentImageryLayer.on('tileerror', function(e) {
+                    console.warn(`Imagery tile loading error for ${selectedImagery}:`, e);
+                });
+            }
+        }
+
+        function updateElevationLayer() {
+            const selectedElevation = document.getElementById('elevation-select').value;
+            const opacity = document.getElementById('elevation-opacity').value / 100;
+            
+            // Remove current elevation layer
+            if (currentElevationLayer) {
+                map.removeLayer(currentElevationLayer);
+                currentElevationLayer = null;
+            }
+            
+            // Add new elevation layer if selected
+            if (selectedElevation !== 'none' && elevationLayers[selectedElevation]) {
+                currentElevationLayer = elevationLayers[selectedElevation];
+                currentElevationLayer.setOpacity(opacity);
+                currentElevationLayer.addTo(map);
+                
+                // Handle potential loading errors
+                currentElevationLayer.on('tileerror', function(e) {
+                    console.warn(`Elevation tile loading error for ${selectedElevation}:`, e);
+                });
+            }
         }
 
         // Error handling
@@ -970,6 +1094,24 @@
 
         // Event listeners for controls
         function setupEventListeners() {
+            // Imagery layer controls
+            document.getElementById('imagery-select').addEventListener('change', updateImageryLayer);
+            document.getElementById('imagery-opacity').addEventListener('input', function() {
+                document.getElementById('imagery-opacity-value').textContent = this.value + '%';
+                if (currentImageryLayer) {
+                    currentImageryLayer.setOpacity(this.value / 100);
+                }
+            });
+
+            // Elevation layer controls
+            document.getElementById('elevation-select').addEventListener('change', updateElevationLayer);
+            document.getElementById('elevation-opacity').addEventListener('input', function() {
+                document.getElementById('elevation-opacity-value').textContent = this.value + '%';
+                if (currentElevationLayer) {
+                    currentElevationLayer.setOpacity(this.value / 100);
+                }
+            });
+
             // Layer toggles
             document.getElementById('prairies').addEventListener('change', function() {
                 if (this.checked) {
@@ -1044,7 +1186,7 @@
 
         // Initialize the application
         async function initialize() {
-            console.log('🌿 Initializing Hill Prairie Research Application');
+            console.log('Hill Prairie Research Application with WI DNR Layers');
             
             // Load data
             await loadGeoJSONData();
@@ -1056,12 +1198,12 @@
             map.addLayer(prairieLayer);
             updatePrairieDisplay();
             
-            console.log('✅ Application initialized successfully');
+            console.log('Application initialized successfully');
         }
 
         // Start the application
         initialize().catch(error => {
-            console.error('❌ Failed to initialize application:', error);
+            console.error('Failed to initialize application:', error);
             showError('Failed to initialize application. Please refresh the page.');
         });
     </script>
