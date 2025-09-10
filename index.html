@@ -419,51 +419,45 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
-    <script>
-        // Initialize map centered on Driftless Region
-        const map = L.map('map').setView([43.25, -90.8], 10);
+<script>
+  const map = L.map('map').setView([43.25, -90.8], 9);
 
-        // Add base layers
-        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        });
+  // Basemaps
+  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' });
+  const esriImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri & contributors' });
+  const esriTopo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri & contributors' });
+  const usgsTopo = L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', { attribution: 'USGS Topographic' });
+  const usgsRelief = L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSShadedReliefOnly/MapServer/tile/{z}/{y}/{x}', { attribution: 'USGS Shaded Relief' });
 
-        const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri'
-        });
+  // Wisconsin Imagery
+  const naip2020 = L.tileLayer('https://gis.sco.wisc.edu/arcgis/rest/services/NAIP/naip_2020/ImageServer/tile/{z}/{y}/{x}', { attribution: 'NAIP 2020 – USDA via SCO Wisconsin' });
+  const naip2022 = L.tileLayer('https://gis.sco.wisc.edu/arcgis/rest/services/NAIP/naip_2022/ImageServer/tile/{z}/{y}/{x}', { attribution: 'NAIP 2022 – USDA via SCO Wisconsin' });
+  const naip2024 = L.tileLayer('https://gis.sco.wisc.edu/arcgis/rest/services/NAIP/naip_2024/ImageServer/tile/{z}/{y}/{x}', { attribution: 'NAIP 2024 – USDA via SCO Wisconsin' });
+  const leafOff2020 = L.tileLayer('https://gis.sco.wisc.edu/arcgis/rest/services/WisconsinImagery/Leaf_Off_2020/ImageServer/tile/{z}/{y}/{x}', { attribution: 'Leaf-Off 2020 – SCO Wisconsin' });
 
-        const terrain = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri'
-        });
+  // Elevation derivatives
+  const demColor = L.tileLayer('https://gis.sco.wisc.edu/arcgis/rest/services/Elevation/Colorized_DEM/ImageServer/tile/{z}/{y}/{x}', { attribution: 'Colorized DEM – SCO Wisconsin' });
+  const slope = L.tileLayer('https://gis.sco.wisc.edu/arcgis/rest/services/Elevation/Slope/ImageServer/tile/{z}/{y}/{x}', { attribution: 'Slope – SCO Wisconsin' });
+  const aspect = L.tileLayer('https://gis.sco.wisc.edu/arcgis/rest/services/Elevation/Aspect/ImageServer/tile/{z}/{y}/{x}', { attribution: 'Aspect – SCO Wisconsin' });
 
-        // NAIP Imagery layers for multiple years
-        const naip2024 = L.tileLayer('https://services.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer/tile/{z}/{y}/{x}', {
-            attribution: '© USDA NAIP 2024'
-        });
+  // Add default
+  osm.addTo(map);
 
-        const naip2022 = L.tileLayer('https://gis.apfo.usda.gov/arcgis/rest/services/NAIP/Wisconsin_2022_60cm/ImageServer/tile/{z}/{y}/{x}', {
-            attribution: '© USDA NAIP 2022'
-        });
-
-        const naip2020 = L.tileLayer('https://gis.apfo.usda.gov/arcgis/rest/services/NAIP/Wisconsin_2020_60cm/ImageServer/tile/{z}/{y}/{x}', {
-            attribution: '© USDA NAIP 2020'
-        });
-
-        // Leafs-off imagery for better land cover analysis
-        const leafsOff = L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© USGS Topo/Imagery'
-        });
-
-        // Base layer control with expanded options
-        const baseLayers = {
-            "OpenStreetMap": osm,
-            "Satellite (Current)": satellite,
-            "Terrain": terrain,
-            "NAIP 2024": naip2024,
-            "NAIP 2022": naip2022, 
-            "NAIP 2020": naip2020,
-            "Leafs-off Imagery": leafsOff
-        };
+  // Layer control
+  const baseLayers = {
+    "OpenStreetMap": osm,
+    "Esri Satellite": esriImagery,
+    "Esri Terrain": esriTopo,
+    "USGS Topo": usgsTopo,
+    "USGS Shaded Relief": usgsRelief,
+    "NAIP 2020": naip2020,
+    "NAIP 2022": naip2022,
+    "NAIP 2024 (when available)": naip2024,
+    "Leaf-Off 2020": leafOff2020,
+    "Colorized DEM": demColor,
+    "Slope": slope,
+    "Aspect": aspect
+  };
 
         osm.addTo(map);
         L.control.layers(baseLayers).addTo(map);
