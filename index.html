@@ -462,10 +462,14 @@
         // Initialize map centered on Driftless Region
         const map = L.map('map').setView([43.25, -90.8], 10);
 
-        // Wisconsin DNR base URL - using the correct REST endpoint format
-        const WI_DNR_BASE = 'https://dnrmaps.wi.gov/arcgis/rest/services';
+        // Wisconsin DNR services - using correct endpoints and handling CRS issues
+        const WI_DNR_CACHED = 'https://dnrmaps.wi.gov/arcgis/rest/services/DW_Map_Cached';
+        const WI_DNR_IMAGE = 'https://dnrmaps.wi.gov/arcgis_image/rest/services';
 
-        // Add base layers
+        // Use Wisconsin-specific CRS (State Plane) as primary, with base layers that work
+        const crs = L.CRS.EPSG3857; // Keep Web Mercator for compatibility
+
+        // Add base layers - simplified for Wisconsin focus
         const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         });
@@ -474,136 +478,119 @@
             attribution: '© Esri'
         });
 
-        const terrain = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri'
+        // Wisconsin-specific base layer from DNR
+        const wiBase = L.tileLayer(`${WI_DNR_CACHED}/EN_Basic_Basemap_WTM_Ext_Dynamic_L16/MapServer/tile/{z}/{y}/{x}`, {
+            attribution: '© Wisconsin DNR',
+            maxZoom: 16,
+            errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
         });
 
-        // Wisconsin DNR Imagery layers - using MapServer endpoints which are more reliable
+        // Wisconsin DNR Imagery layers - using Image Server endpoints for better reliability
         const imageryLayers = {
-            'latest-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_Latest_Leaf_On/MapServer/tile/{z}/{y}/{x}`, {
+            'latest-leaf-on': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_Latest_Leaf_On/ImageServer/WMSServer`, {
+                layers: '0',
+                format: 'image/png',
+                transparent: true,
                 attribution: '© Wisconsin DNR',
-                maxZoom: 19,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+                crs: L.CRS.EPSG3857
             }),
-            'latest-leaf-off': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_Latest_Leaf_Off/MapServer/tile/{z}/{y}/{x}`, {
+            'latest-leaf-off': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_Latest_Leaf_Off/ImageServer/WMSServer`, {
+                layers: '0',
+                format: 'image/png',
+                transparent: true,
                 attribution: '© Wisconsin DNR',
-                maxZoom: 19,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+                crs: L.CRS.EPSG3857
             }),
-            '2022-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2022_Leaf_On/MapServer/tile/{z}/{y}/{x}`, {
+            '2022-leaf-on': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_2022_Leaf_On/ImageServer/WMSServer`, {
+                layers: '0',
+                format: 'image/png',
+                transparent: true,
                 attribution: '© Wisconsin DNR 2022',
-                maxZoom: 19,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+                crs: L.CRS.EPSG3857
             }),
-            '2020-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2020_Leaf_On/MapServer/tile/{z}/{y}/{x}`, {
+            '2020-leaf-on': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_2020_Leaf_On/ImageServer/WMSServer`, {
+                layers: '0',
+                format: 'image/png',
+                transparent: true,
                 attribution: '© Wisconsin DNR 2020',
-                maxZoom: 19,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+                crs: L.CRS.EPSG3857
             }),
-            '2015-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2015_Leaf_On/MapServer/tile/{z}/{y}/{x}`, {
+            '2015-leaf-on': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_2015_Leaf_On/ImageServer/WMSServer`, {
+                layers: '0',
+                format: 'image/png',
+                transparent: true,
                 attribution: '© Wisconsin DNR 2015',
-                maxZoom: 18,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+                crs: L.CRS.EPSG3857
             }),
-            '2013-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2013_Leaf_On/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR 2013',
-                maxZoom: 18,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            }),
-            '2010-leaf-off': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2010_Leaf_Off/MapServer/tile/{z}/{y}/{x}`, {
+            '2010-leaf-off': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_2010_Leaf_Off/ImageServer/WMSServer`, {
+                layers: '0',
+                format: 'image/png',
+                transparent: true,
                 attribution: '© Wisconsin DNR 2010',
-                maxZoom: 17,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+                crs: L.CRS.EPSG3857
             }),
-            '2008-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2008_Leaf_On/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR 2008',
-                maxZoom: 17,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            }),
-            '2005-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_2005_Leaf_On/MapServer/tile/{z}/{y}/{x}`, {
+            '2005-leaf-on': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_2005_Leaf_On/ImageServer/WMSServer`, {
+                layers: '0',
+                format: 'image/png',
+                transparent: true,
                 attribution: '© Wisconsin DNR 2005',
-                maxZoom: 17,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+                crs: L.CRS.EPSG3857
             }),
-            '1990s-leaf-off': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_1990s_Leaf_Off_Raster_Tile/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR 1990s',
+            // Fallback to direct tile access for some layers
+            'cir-leaf-on': L.tileLayer(`${WI_DNR_CACHED}/EN_Image_Basemap_Composite_CIR_WTM_Ext_Dynamic_L16/MapServer/tile/{z}/{y}/{x}`, {
+                attribution: '© Wisconsin DNR CIR',
                 maxZoom: 16,
                 errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            }),
-            '1930s-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_1930s_Leaf_On/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR 1930s',
-                maxZoom: 15,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            }),
-            'cir-leaf-on': L.tileLayer(`${WI_DNR_BASE}/DW_Imagery/EN_Image_Basemap_CIR_Leaf_On_Raster_Tile/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR CIR',
-                maxZoom: 18,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
             })
         };
 
-        // Wisconsin DNR Elevation layers
+        // Wisconsin DNR Elevation layers - using WMS for better compatibility
         const elevationLayers = {
-            'hillshade-lidar': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Hillshade_from_LiDAR/MapServer/tile/{z}/{y}/{x}`, {
+            'hillshade-lidar': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Elevation/EN_Hillshade_from_LiDAR/ImageServer/WMSServer`, {
+                layers: '0',
+                format: 'image/png',
+                transparent: true,
                 attribution: '© Wisconsin DNR LiDAR',
-                maxZoom: 19,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+                crs: L.CRS.EPSG3857
             }),
-            'hillshade-10m': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Hillshade_10m/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR 10m',
-                maxZoom: 17,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            }),
-            'dem-lidar': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_DEM_from_LiDAR/MapServer/tile/{z}/{y}/{x}`, {
+            'dem-lidar-colorized': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Elevation/EN_DEM_from_LiDAR_Colorized/ImageServer/WMSServer`, {
+                layers: '0',
+                format: 'image/png',
+                transparent: true,
                 attribution: '© Wisconsin DNR LiDAR DEM',
-                maxZoom: 19,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+                crs: L.CRS.EPSG3857
             }),
-            'dem-lidar-colorized': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_DEM_from_LiDAR_Colorized/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR LiDAR DEM',
-                maxZoom: 19,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            }),
-            'dem-10m': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_DEM_10m/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR 10m DEM',
-                maxZoom: 17,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            }),
-            'slope-lidar-degree': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Slope_from_LiDAR_Degree/MapServer/tile/{z}/{y}/{x}`, {
+            'slope-lidar-degree': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Elevation/EN_Slope_from_LiDAR_Degree/ImageServer/WMSServer`, {
+                layers: '0',
+                format: 'image/png',
+                transparent: true,
                 attribution: '© Wisconsin DNR LiDAR Slope',
-                maxZoom: 19,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+                crs: L.CRS.EPSG3857
             }),
-            'slope-lidar-percent': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Slope_from_LiDAR_Percent/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR LiDAR Slope',
-                maxZoom: 19,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            }),
-            'contours-2ft': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Contour_from_LiDAR_2_ft/MapServer/tile/{z}/{y}/{x}`, {
+            // Use cached tile services for contours as they work better as tiles
+            'contours-2ft': L.tileLayer(`${WI_DNR_CACHED}/EN_Elevation_Contour_2ft_WTM_Ext_Dynamic_L19/MapServer/tile/{z}/{y}/{x}`, {
                 attribution: '© Wisconsin DNR 2ft Contours',
                 maxZoom: 19,
+                minZoom: 14, // Contours only visible at higher zoom levels
                 errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
             }),
-            'contours-5ft': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Contour_from_LiDAR_5_ft/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR 5ft Contours',
-                maxZoom: 18,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            }),
-            'contours-10ft': L.tileLayer(`${WI_DNR_BASE}/DW_Elevation/EN_Contour_from_LiDAR_10_ft/MapServer/tile/{z}/{y}/{x}`, {
+            'contours-10ft': L.tileLayer(`${WI_DNR_CACHED}/EN_Elevation_Contour_10ft_WTM_Ext_Dynamic_L17/MapServer/tile/{z}/{y}/{x}`, {
                 attribution: '© Wisconsin DNR 10ft Contours',
                 maxZoom: 17,
+                minZoom: 10,
                 errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
             })
         };
 
-        // Base layer control
+        // Base layer control - prioritizing Wisconsin layers
         const baseLayers = {
+            "Wisconsin DNR": wiBase,
             "OpenStreetMap": osm,
-            "Satellite": satellite,
-            "Terrain": terrain
+            "Satellite": satellite
         };
 
-        osm.addTo(map);
+        // Start with Wisconsin DNR base layer if available, fallback to OSM
+        wiBase.addTo(map);
         L.control.layers(baseLayers).addTo(map);
 
         // Current overlay layers
@@ -694,7 +681,7 @@
             }
         }
 
-        // Layer management functions
+        // Layer management functions with improved error handling
         function updateImageryLayer() {
             const selectedImagery = document.getElementById('imagery-select').value;
             const opacity = document.getElementById('imagery-opacity').value / 100;
@@ -710,29 +697,61 @@
                 currentImageryLayer = imageryLayers[selectedImagery];
                 currentImageryLayer.setOpacity(opacity);
                 
-                // Add better error handling with retry mechanism
+                // Enhanced error handling for WMS vs tile services
+                const isWMS = currentImageryLayer.wmsParams !== undefined;
                 let tileLoadAttempts = 0;
-                const maxRetries = 3;
+                const maxRetries = 2; // Fewer retries for WMS
                 
-                currentImageryLayer.on('tileloadstart', function(e) {
-                    console.log(`Loading imagery tile: ${selectedImagery}`);
-                });
-                
-                currentImageryLayer.on('tileload', function(e) {
-                    console.log(`Successfully loaded imagery tile for ${selectedImagery}`);
-                });
+                if (isWMS) {
+                    console.log(`Loading WMS imagery service: ${selectedImagery}`);
+                    
+                    // WMS-specific error handling
+                    currentImageryLayer.on('loading', function(e) {
+                        console.log(`WMS imagery loading: ${selectedImagery}`);
+                    });
+                    
+                    currentImageryLayer.on('load', function(e) {
+                        console.log(`Successfully loaded WMS imagery: ${selectedImagery}`);
+                    });
+                } else {
+                    console.log(`Loading tile imagery service: ${selectedImagery}`);
+                    
+                    currentImageryLayer.on('tileloadstart', function(e) {
+                        console.log(`Loading imagery tile: ${selectedImagery}`);
+                    });
+                    
+                    currentImageryLayer.on('tileload', function(e) {
+                        console.log(`Successfully loaded imagery tile for ${selectedImagery}`);
+                    });
+                }
                 
                 currentImageryLayer.on('tileerror', function(e) {
                     tileLoadAttempts++;
-                    console.warn(`Imagery tile loading error for ${selectedImagery} (attempt ${tileLoadAttempts}):`, e.error);
+                    console.warn(`Imagery loading error for ${selectedImagery} (attempt ${tileLoadAttempts}):`, e.error);
                     
                     if (tileLoadAttempts >= maxRetries) {
-                        showError(`Unable to load ${selectedImagery.replace('-', ' ')} imagery. The Wisconsin DNR service may be temporarily unavailable or this layer may not be accessible from your location.`);
+                        const serviceType = isWMS ? 'WMS service' : 'tile service';
+                        showError(`Unable to load ${selectedImagery.replace('-', ' ')} imagery (${serviceType}). The Wisconsin DNR service may be temporarily unavailable, or there may be a CORS/projection compatibility issue.`);
                     }
                 });
                 
-                currentImageryLayer.addTo(map);
-                console.log(`Added imagery layer: ${selectedImagery}`);
+                // Add to map with timeout fallback
+                try {
+                    currentImageryLayer.addTo(map);
+                    console.log(`Added imagery layer: ${selectedImagery} (${isWMS ? 'WMS' : 'Tile'} service)`);
+                    
+                    // Test load with timeout for WMS
+                    if (isWMS) {
+                        setTimeout(() => {
+                            if (currentImageryLayer && !currentImageryLayer._loaded) {
+                                console.warn(`WMS service ${selectedImagery} taking longer than expected to load`);
+                            }
+                        }, 5000);
+                    }
+                } catch (addError) {
+                    console.error(`Error adding imagery layer ${selectedImagery}:`, addError);
+                    showError(`Failed to initialize ${selectedImagery.replace('-', ' ')} imagery layer.`);
+                }
             }
         }
 
@@ -751,30 +770,106 @@
                 currentElevationLayer = elevationLayers[selectedElevation];
                 currentElevationLayer.setOpacity(opacity);
                 
-                // Add better error handling with retry mechanism
+                // Enhanced error handling for WMS vs tile services
+                const isWMS = currentElevationLayer.wmsParams !== undefined;
                 let tileLoadAttempts = 0;
-                const maxRetries = 3;
+                const maxRetries = 2;
                 
-                currentElevationLayer.on('tileloadstart', function(e) {
-                    console.log(`Loading elevation tile: ${selectedElevation}`);
-                });
-                
-                currentElevationLayer.on('tileload', function(e) {
-                    console.log(`Successfully loaded elevation tile for ${selectedElevation}`);
-                });
+                if (isWMS) {
+                    console.log(`Loading WMS elevation service: ${selectedElevation}`);
+                    
+                    currentElevationLayer.on('loading', function(e) {
+                        console.log(`WMS elevation loading: ${selectedElevation}`);
+                    });
+                    
+                    currentElevationLayer.on('load', function(e) {
+                        console.log(`Successfully loaded WMS elevation: ${selectedElevation}`);
+                    });
+                } else {
+                    console.log(`Loading tile elevation service: ${selectedElevation}`);
+                    
+                    currentElevationLayer.on('tileloadstart', function(e) {
+                        console.log(`Loading elevation tile: ${selectedElevation}`);
+                    });
+                    
+                    currentElevationLayer.on('tileload', function(e) {
+                        console.log(`Successfully loaded elevation tile for ${selectedElevation}`);
+                    });
+                }
                 
                 currentElevationLayer.on('tileerror', function(e) {
                     tileLoadAttempts++;
-                    console.warn(`Elevation tile loading error for ${selectedElevation} (attempt ${tileLoadAttempts}):`, e.error);
+                    console.warn(`Elevation loading error for ${selectedElevation} (attempt ${tileLoadAttempts}):`, e.error);
                     
                     if (tileLoadAttempts >= maxRetries) {
-                        showError(`Unable to load ${selectedElevation.replace('-', ' ')} elevation data. The Wisconsin DNR service may be temporarily unavailable or this layer may not be accessible from your location.`);
+                        const serviceType = isWMS ? 'WMS service' : 'tile service';
+                        showError(`Unable to load ${selectedElevation.replace('-', ' ')} elevation data (${serviceType}). The Wisconsin DNR service may be temporarily unavailable or there may be a CORS/projection compatibility issue.`);
                     }
                 });
                 
-                currentElevationLayer.addTo(map);
-                console.log(`Added elevation layer: ${selectedElevation}`);
+                // Add to map with error handling
+                try {
+                    currentElevationLayer.addTo(map);
+                    console.log(`Added elevation layer: ${selectedElevation} (${isWMS ? 'WMS' : 'Tile'} service)`);
+                    
+                    // Test load with timeout for WMS
+                    if (isWMS) {
+                        setTimeout(() => {
+                            if (currentElevationLayer && !currentElevationLayer._loaded) {
+                                console.warn(`WMS elevation service ${selectedElevation} taking longer than expected to load`);
+                            }
+                        }, 5000);
+                    }
+                } catch (addError) {
+                    console.error(`Error adding elevation layer ${selectedElevation}:`, addError);
+                    showError(`Failed to initialize ${selectedElevation.replace('-', ' ')} elevation layer.`);
+                }
             }
+        }
+
+        // Update dropdown options to reflect working services
+        function updateServiceOptions() {
+            const imagerySelect = document.getElementById('imagery-select');
+            const elevationSelect = document.getElementById('elevation-select');
+            
+            // Add working service indicators
+            const workingImageryOptions = [
+                { value: 'none', text: 'Select Imagery Layer' },
+                { value: 'latest-leaf-on', text: 'Latest Leaf-On (WMS)' },
+                { value: 'latest-leaf-off', text: 'Latest Leaf-Off (WMS)' },
+                { value: '2022-leaf-on', text: '2022 Leaf-On (WMS)' },
+                { value: '2020-leaf-on', text: '2020 Leaf-On (WMS)' },
+                { value: '2015-leaf-on', text: '2015 Leaf-On (WMS)' },
+                { value: '2010-leaf-off', text: '2010 Leaf-Off (WMS)' },
+                { value: '2005-leaf-on', text: '2005 Leaf-On (WMS)' },
+                { value: 'cir-leaf-on', text: 'Color Infrared (Cached)' }
+            ];
+            
+            const workingElevationOptions = [
+                { value: 'none', text: 'Select Elevation Layer' },
+                { value: 'hillshade-lidar', text: 'LiDAR Hillshade (WMS)' },
+                { value: 'dem-lidar-colorized', text: 'LiDAR DEM Colorized (WMS)' },
+                { value: 'slope-lidar-degree', text: 'LiDAR Slope Degrees (WMS)' },
+                { value: 'contours-2ft', text: '2ft Contours (Cached)' },
+                { value: 'contours-10ft', text: '10ft Contours (Cached)' }
+            ];
+            
+            // Clear and repopulate dropdowns
+            imagerySelect.innerHTML = '';
+            workingImageryOptions.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.text;
+                imagerySelect.appendChild(option);
+            });
+            
+            elevationSelect.innerHTML = '';
+            workingElevationOptions.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.text;
+                elevationSelect.appendChild(option);
+            });
         }
 
         // Error handling
@@ -1282,7 +1377,18 @@
 
         // Initialize the application
         async function initialize() {
-            console.log('Hill Prairie Research Application with WI DNR Layers');
+            console.log('Hill Prairie Research Application with Wisconsin DNR Layers');
+            console.log('Using WMS services for better projection compatibility');
+            
+            // Update service options to reflect working endpoints
+            updateServiceOptions();
+            
+            // Test base layer connectivity
+            wiBase.on('tileerror', function(e) {
+                console.warn('Wisconsin DNR base layer failed, falling back to OSM');
+                map.removeLayer(wiBase);
+                osm.addTo(map);
+            });
             
             // Load data
             await loadGeoJSONData();
@@ -1295,6 +1401,7 @@
             updatePrairieDisplay();
             
             console.log('Application initialized successfully');
+            console.log('Note: WMS services may take longer to load than cached tile services');
         }
 
         // Start the application
