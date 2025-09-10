@@ -51,11 +51,12 @@ L.control.layers({
     "USGS Shaded Relief": baseLayers.usgsRelief,
     "NAIP 2020": baseLayers.naip2020,
     "NAIP 2022": baseLayers.naip2022,
-    "NAIP 2024 (when available)": baseLayers.naip2024,
     "Leaf-Off 2020": baseLayers.leafOff2020,
+    "DEM Shaded Relief": baseLayers.demShaded,
     "Colorized DEM": baseLayers.demColor,
     "Slope": baseLayers.slope,
-    "Aspect": baseLayers.aspect
+    "Aspect": baseLayers.aspect,
+    "Hillshade": baseLayers.hillshade
 }).addTo(map);
 
 // Data storage
