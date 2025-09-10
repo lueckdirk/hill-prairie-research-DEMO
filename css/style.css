@@ -1,0 +1,217 @@
+/* Hill Prairie Research Application Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #333;
+}
+
+.header {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.header h1 {
+    color: #2c5530;
+    margin-bottom: 10px;
+    font-size: 2.2em;
+}
+
+.header p {
+    color: #5a6b5d;
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.container {
+    display: flex;
+    height: calc(100vh - 120px);
+    background: white;
+}
+
+.sidebar {
+    width: 320px;
+    background: rgba(255, 255, 255, 0.98);
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.map-container {
+    flex: 1;
+    position: relative;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+.control-group {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #28a745;
+}
+
+.control-group h3 {
+    color: #2c5530;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.layer-control {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 8px;
+    background: white;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.layer-control:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.layer-control input {
+    margin-right: 10px;
+}
+
+.layer-control label {
+    flex: 1;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.legend {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-top: 15px;
+}
+
+.legend h4 {
+    color: #2c5530;
+    margin-bottom: 10px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    margin-right: 10px;
+    border: 1px solid #ddd;
+}
+
+.stats-panel {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.popup-content {
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.popup-content h3 {
+    color: #2c5530;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #28a745;
+    padding-bottom: 5px;
+}
+
+.popup-metric {
+    display: flex;
+    justify-content: space-between;
+    margin: 5px 0;
+    padding: 3px 0;
+}
+
+.popup-metric strong {
+    color: #495057;
+}
+
+.connectivity-high { background-color: #28a745; }
+.connectivity-medium { background-color: #ffc107; }
+.connectivity-low { background-color: #dc3545; }
+
+.habitat-excellent { background-color: #155724; }
+.habitat-good { background-color: #28a745; }
+.habitat-fair { background-color: #856404; }
+.habitat-poor { background-color: #721c24; }
+
+.loading-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255,255,255,0.9);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    border: 1px solid #f5c6cb;
+}
+
+.data-toggle {
+    background: #e3f2fd;
+    border-left-color: #2196f3;
+}
+
+.training-marker { background-color: #28a745; }
+.validation-marker { background-color: #9c27b0; }
+.example-marker { background-color: #ff9800; }
+
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: 250px;
+    }
+    
+    .map-container {
+        height: calc(100vh - 370px);
+    }
+}
