@@ -204,11 +204,6 @@
             border-left-color: #2196f3;
         }
 
-        .base-layer-toggle {
-            background: #e8f5e8;
-            border-left-color: #4caf50;
-        }
-
         .imagery-toggle {
             background: #fff3e0;
             border-left-color: #ff9800;
@@ -249,6 +244,40 @@
             justify-content: space-between;
         }
 
+        .under-development-banner {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            border: 2px dashed #6c757d;
+            margin: 10px 0;
+        }
+
+        .banner-icon {
+            font-size: 2em;
+            margin-right: 15px;
+            opacity: 0.7;
+        }
+
+        .banner-content {
+            flex: 1;
+        }
+
+        .banner-content strong {
+            display: block;
+            color: #495057;
+            font-size: 1.1em;
+            margin-bottom: 4px;
+        }
+
+        .banner-content p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -268,35 +297,11 @@
 <body>
     <div class="header">
         <h1>Hill Prairie Research - Driftless Region</h1>
-        <p>Interactive visualization of remnant hill prairie connectivity, species distributions, and conservation priorities using Wisconsin DNR base layers and elevation data for comprehensive landscape analysis.</p>
+        <p>Interactive visualization of remnant hill prairie connectivity, species distributions, and conservation priorities in the Driftless Region. Wisconsin DNR imagery and elevation layers under development.</p>
     </div>
 
     <div class="container">
         <div class="sidebar">
-            <div class="control-group base-layer-toggle">
-                <h3>Wisconsin DNR Base Layers</h3>
-                <div class="layer-control">
-                    <input type="radio" id="base-basic" name="base-layer" value="basic" checked>
-                    <label for="base-basic">Basic Basemap</label>
-                </div>
-                <div class="layer-control">
-                    <input type="radio" id="base-leaf-on" name="base-layer" value="leaf-on">
-                    <label for="base-leaf-on">Latest Leaf-On Imagery</label>
-                </div>
-                <div class="layer-control">
-                    <input type="radio" id="base-leaf-off" name="base-layer" value="leaf-off">
-                    <label for="base-leaf-off">Latest Leaf-Off Imagery</label>
-                </div>
-                <div class="layer-control">
-                    <input type="radio" id="base-topo" name="base-layer" value="topo">
-                    <label for="base-topo">Topographic Map</label>
-                </div>
-                <div class="layer-control">
-                    <input type="radio" id="base-cir" name="base-layer" value="cir">
-                    <label for="base-cir">Color Infrared</label>
-                </div>
-            </div>
-
             <div class="control-group data-toggle">
                 <h3>Data Source</h3>
                 <div class="layer-control">
@@ -318,48 +323,25 @@
             </div>
 
             <div class="control-group imagery-toggle">
-                <h3>Historical Imagery Overlay</h3>
-                <label for="imagery-select">Add Historical Layer:</label>
-                <select id="imagery-select">
-                    <option value="none">No Additional Imagery</option>
-                    <option value="2022-leaf-on">2022 Leaf-On</option>
-                    <option value="2020-leaf-on">2020 Leaf-On</option>
-                    <option value="2015-leaf-on">2015 Leaf-On</option>
-                    <option value="2013-leaf-on">2013 Leaf-On</option>
-                    <option value="2010-leaf-off">2010 Leaf-Off</option>
-                    <option value="2008-leaf-on">2008 Leaf-On</option>
-                    <option value="2005-leaf-on">2005 Leaf-On</option>
-                    <option value="1990s-leaf-off">1990s Leaf-Off</option>
-                    <option value="1930s-leaf-on">1930s Leaf-On (Historic)</option>
-                </select>
-                <div class="opacity-label">
-                    <span>Overlay Opacity:</span>
-                    <span id="imagery-opacity-value">60%</span>
+                <h3>Wisconsin DNR Imagery</h3>
+                <div class="under-development-banner">
+                    <div class="banner-icon">🚧</div>
+                    <div class="banner-content">
+                        <strong>Under Development</strong>
+                        <p>Historical imagery layers coming soon</p>
+                    </div>
                 </div>
-                <input type="range" class="layer-opacity" id="imagery-opacity" min="0" max="100" value="60">
             </div>
 
             <div class="control-group elevation-toggle">
-                <h3>Wisconsin DNR Elevation Overlay</h3>
-                <label for="elevation-select">Add Terrain Analysis:</label>
-                <select id="elevation-select">
-                    <option value="none">No Elevation Layer</option>
-                    <option value="hillshade-lidar">LiDAR Hillshade</option>
-                    <option value="hillshade-10m">10m Hillshade</option>
-                    <option value="dem-lidar">LiDAR DEM</option>
-                    <option value="dem-lidar-colorized">LiDAR DEM (Colorized)</option>
-                    <option value="dem-10m">10m DEM</option>
-                    <option value="slope-lidar-degree">LiDAR Slope (Degrees)</option>
-                    <option value="slope-lidar-percent">LiDAR Slope (Percent)</option>
-                    <option value="contours-2ft">2ft Contours</option>
-                    <option value="contours-5ft">5ft Contours</option>
-                    <option value="contours-10ft">10ft Contours</option>
-                </select>
-                <div class="opacity-label">
-                    <span>Overlay Opacity:</span>
-                    <span id="elevation-opacity-value">50%</span>
+                <h3>Wisconsin DNR Elevation</h3>
+                <div class="under-development-banner">
+                    <div class="banner-icon">🗻</div>
+                    <div class="banner-content">
+                        <strong>Under Development</strong>
+                        <p>LiDAR and terrain analysis layers coming soon</p>
+                    </div>
                 </div>
-                <input type="range" class="layer-opacity" id="elevation-opacity" min="0" max="100" value="50">
             </div>
 
             <div class="control-group">
@@ -488,126 +470,29 @@
         // Initialize map centered on Driftless Region
         const map = L.map('map').setView([43.25, -90.8], 10);
 
-        // Wisconsin DNR services - using consistent endpoints
-        const WI_DNR_CACHED = 'https://dnrmaps.wi.gov/arcgis/rest/services/DW_Map_Cached';
-        const WI_DNR_IMAGE = 'https://dnrmaps.wi.gov/arcgis_image/rest/services';
+        // Add base layers - simplified and reliable
+        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        });
 
-        // Wisconsin DNR Base Layers - all from same projection system
+        const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri'
+        });
+
+        const topo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri'
+        });
+
+        // Base layer control
         const baseLayers = {
-            'basic': L.tileLayer(`${WI_DNR_CACHED}/EN_Basic_Basemap_WTM_Ext_Dynamic_L16/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR - Basic Basemap',
-                maxZoom: 16,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            }),
-            'leaf-on': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_Latest_Leaf_On/ImageServer/WMSServer`, {
-                layers: '0',
-                format: 'image/png',
-                transparent: false,
-                attribution: '© Wisconsin DNR - Latest Leaf-On Imagery',
-                crs: L.CRS.EPSG3857
-            }),
-            'leaf-off': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_Latest_Leaf_Off/ImageServer/WMSServer`, {
-                layers: '0',
-                format: 'image/png',
-                transparent: false,
-                attribution: '© Wisconsin DNR - Latest Leaf-Off Imagery',
-                crs: L.CRS.EPSG3857
-            }),
-            'topo': L.tileLayer(`${WI_DNR_CACHED}/EN_Topo_Basemap_WTM_Ext_Dynamic_L16/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR - Topographic Map',
-                maxZoom: 16,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            }),
-            'cir': L.tileLayer(`${WI_DNR_CACHED}/EN_Image_Basemap_Composite_CIR_WTM_Ext_Dynamic_L16/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR - Color Infrared',
-                maxZoom: 16,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            })
+            "OpenStreetMap": osm,
+            "Satellite": satellite,
+            "Topographic": topo
         };
 
-        // Historical imagery overlay layers
-        const imageryLayers = {
-            '2022-leaf-on': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_2022_Leaf_On/ImageServer/WMSServer`, {
-                layers: '0',
-                format: 'image/png',
-                transparent: true,
-                attribution: '© Wisconsin DNR 2022',
-                crs: L.CRS.EPSG3857
-            }),
-            '2020-leaf-on': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_2020_Leaf_On/ImageServer/WMSServer`, {
-                layers: '0',
-                format: 'image/png',
-                transparent: true,
-                attribution: '© Wisconsin DNR 2020',
-                crs: L.CRS.EPSG3857
-            }),
-            '2015-leaf-on': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_2015_Leaf_On/ImageServer/WMSServer`, {
-                layers: '0',
-                format: 'image/png',
-                transparent: true,
-                attribution: '© Wisconsin DNR 2015',
-                crs: L.CRS.EPSG3857
-            }),
-            '2010-leaf-off': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_2010_Leaf_Off/ImageServer/WMSServer`, {
-                layers: '0',
-                format: 'image/png',
-                transparent: true,
-                attribution: '© Wisconsin DNR 2010',
-                crs: L.CRS.EPSG3857
-            }),
-            '2005-leaf-on': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Imagery/EN_Image_Basemap_2005_Leaf_On/ImageServer/WMSServer`, {
-                layers: '0',
-                format: 'image/png',
-                transparent: true,
-                attribution: '© Wisconsin DNR 2005',
-                crs: L.CRS.EPSG3857
-            })
-        };
-
-        // Wisconsin DNR Elevation layers
-        const elevationLayers = {
-            'hillshade-lidar': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Elevation/EN_Hillshade_from_LiDAR/ImageServer/WMSServer`, {
-                layers: '0',
-                format: 'image/png',
-                transparent: true,
-                attribution: '© Wisconsin DNR LiDAR',
-                crs: L.CRS.EPSG3857
-            }),
-            'dem-lidar-colorized': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Elevation/EN_DEM_from_LiDAR_Colorized/ImageServer/WMSServer`, {
-                layers: '0',
-                format: 'image/png',
-                transparent: true,
-                attribution: '© Wisconsin DNR LiDAR DEM',
-                crs: L.CRS.EPSG3857
-            }),
-            'slope-lidar-degree': L.tileLayer.wms(`${WI_DNR_IMAGE}/DW_Elevation/EN_Slope_from_LiDAR_Degree/ImageServer/WMSServer`, {
-                layers: '0',
-                format: 'image/png',
-                transparent: true,
-                attribution: '© Wisconsin DNR LiDAR Slope',
-                crs: L.CRS.EPSG3857
-            }),
-            'contours-2ft': L.tileLayer(`${WI_DNR_CACHED}/EN_Elevation_Contour_2ft_WTM_Ext_Dynamic_L19/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR 2ft Contours',
-                maxZoom: 19,
-                minZoom: 14,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            }),
-            'contours-10ft': L.tileLayer(`${WI_DNR_CACHED}/EN_Elevation_Contour_10ft_WTM_Ext_Dynamic_L17/MapServer/tile/{z}/{y}/{x}`, {
-                attribution: '© Wisconsin DNR 10ft Contours',
-                maxZoom: 17,
-                minZoom: 10,
-                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-            })
-        };
-
-        // Start with basic Wisconsin DNR base layer
-        let currentBaseLayer = baseLayers['basic'];
-        currentBaseLayer.addTo(map);
-
-        // Current overlay layers
-        let currentImageryLayer = null;
-        let currentElevationLayer = null;
+        // Start with OpenStreetMap
+        osm.addTo(map);
+        L.control.layers(baseLayers).addTo(map);
 
         // Data storage
         let prairieData = [];
@@ -693,186 +578,13 @@
             }
         }
 
-        // Base layer management
-        function switchBaseLayer(layerType) {
-            // Remove current base layer
-            if (currentBaseLayer) {
-                map.removeLayer(currentBaseLayer);
-            }
-            
-            // Add new base layer
-            if (baseLayers[layerType]) {
-                currentBaseLayer = baseLayers[layerType];
-                
-                // Add error handling for base layer
-                const isWMS = currentBaseLayer.wmsParams !== undefined;
-                
-                currentBaseLayer.on('tileerror', function(e) {
-                    console.warn(`Base layer error for ${layerType}:`, e.error);
-                    showError(`Unable to load ${layerType} base layer. Wisconsin DNR service may be temporarily unavailable.`);
-                });
-                
-                if (isWMS) {
-                    currentBaseLayer.on('loading', function(e) {
-                        console.log(`Loading WMS base layer: ${layerType}`);
-                    });
-                    
-                    currentBaseLayer.on('load', function(e) {
-                        console.log(`Successfully loaded WMS base layer: ${layerType}`);
-                    });
-                }
-                
-                try {
-                    currentBaseLayer.addTo(map);
-                    console.log(`Switched to base layer: ${layerType} (${isWMS ? 'WMS' : 'Tile'} service)`);
-                } catch (addError) {
-                    console.error(`Error adding base layer ${layerType}:`, addError);
-                    showError(`Failed to initialize ${layerType} base layer.`);
-                }
-            }
-        }
-
-        // Layer management functions with improved error handling
-        function updateImageryLayer() {
-            const selectedImagery = document.getElementById('imagery-select').value;
-            const opacity = document.getElementById('imagery-opacity').value / 100;
-            
-            // Remove current imagery layer
-            if (currentImageryLayer) {
-                map.removeLayer(currentImageryLayer);
-                currentImageryLayer = null;
-            }
-            
-            // Add new imagery layer if selected
-            if (selectedImagery !== 'none' && imageryLayers[selectedImagery]) {
-                currentImageryLayer = imageryLayers[selectedImagery];
-                currentImageryLayer.setOpacity(opacity);
-                
-                // Enhanced error handling for WMS services
-                let tileLoadAttempts = 0;
-                const maxRetries = 2;
-                
-                console.log(`Loading WMS imagery overlay: ${selectedImagery}`);
-                
-                currentImageryLayer.on('loading', function(e) {
-                    console.log(`WMS imagery overlay loading: ${selectedImagery}`);
-                });
-                
-                currentImageryLayer.on('load', function(e) {
-                    console.log(`Successfully loaded WMS imagery overlay: ${selectedImagery}`);
-                });
-                
-                currentImageryLayer.on('tileerror', function(e) {
-                    tileLoadAttempts++;
-                    console.warn(`Imagery overlay loading error for ${selectedImagery} (attempt ${tileLoadAttempts}):`, e.error);
-                    
-                    if (tileLoadAttempts >= maxRetries) {
-                        showError(`Unable to load ${selectedImagery.replace('-', ' ')} imagery overlay. The Wisconsin DNR service may be temporarily unavailable.`);
-                    }
-                });
-                
-                try {
-                    currentImageryLayer.addTo(map);
-                    console.log(`Added imagery overlay: ${selectedImagery} (WMS service)`);
-                    
-                    // Test load with timeout for WMS
-                    setTimeout(() => {
-                        if (currentImageryLayer && !currentImageryLayer._loaded) {
-                            console.warn(`WMS imagery service ${selectedImagery} taking longer than expected to load`);
-                        }
-                    }, 5000);
-                } catch (addError) {
-                    console.error(`Error adding imagery overlay ${selectedImagery}:`, addError);
-                    showError(`Failed to initialize ${selectedImagery.replace('-', ' ')} imagery overlay.`);
-                }
-            }
-        }
-
-        function updateElevationLayer() {
-            const selectedElevation = document.getElementById('elevation-select').value;
-            const opacity = document.getElementById('elevation-opacity').value / 100;
-            
-            // Remove current elevation layer
-            if (currentElevationLayer) {
-                map.removeLayer(currentElevationLayer);
-                currentElevationLayer = null;
-            }
-            
-            // Add new elevation layer if selected
-            if (selectedElevation !== 'none' && elevationLayers[selectedElevation]) {
-                currentElevationLayer = elevationLayers[selectedElevation];
-                currentElevationLayer.setOpacity(opacity);
-                
-                // Enhanced error handling for WMS vs tile services
-                const isWMS = currentElevationLayer.wmsParams !== undefined;
-                let tileLoadAttempts = 0;
-                const maxRetries = 2;
-                
-                if (isWMS) {
-                    console.log(`Loading WMS elevation overlay: ${selectedElevation}`);
-                    
-                    currentElevationLayer.on('loading', function(e) {
-                        console.log(`WMS elevation overlay loading: ${selectedElevation}`);
-                    });
-                    
-                    currentElevationLayer.on('load', function(e) {
-                        console.log(`Successfully loaded WMS elevation overlay: ${selectedElevation}`);
-                    });
-                } else {
-                    console.log(`Loading tile elevation overlay: ${selectedElevation}`);
-                    
-                    currentElevationLayer.on('tileloadstart', function(e) {
-                        console.log(`Loading elevation tile overlay: ${selectedElevation}`);
-                    });
-                    
-                    currentElevationLayer.on('tileload', function(e) {
-                        console.log(`Successfully loaded elevation tile overlay for ${selectedElevation}`);
-                    });
-                }
-                
-                currentElevationLayer.on('tileerror', function(e) {
-                    tileLoadAttempts++;
-                    console.warn(`Elevation overlay loading error for ${selectedElevation} (attempt ${tileLoadAttempts}):`, e.error);
-                    
-                    if (tileLoadAttempts >= maxRetries) {
-                        const serviceType = isWMS ? 'WMS service' : 'tile service';
-                        showError(`Unable to load ${selectedElevation.replace('-', ' ')} elevation overlay (${serviceType}). The Wisconsin DNR service may be temporarily unavailable.`);
-                    }
-                });
-                
-                try {
-                    currentElevationLayer.addTo(map);
-                    console.log(`Added elevation overlay: ${selectedElevation} (${isWMS ? 'WMS' : 'Tile'} service)`);
-                    
-                    // Test load with timeout for WMS
-                    if (isWMS) {
-                        setTimeout(() => {
-                            if (currentElevationLayer && !currentElevationLayer._loaded) {
-                                console.warn(`WMS elevation service ${selectedElevation} taking longer than expected to load`);
-                            }
-                        }, 5000);
-                    }
-                } catch (addError) {
-                    console.error(`Error adding elevation overlay ${selectedElevation}:`, addError);
-                    showError(`Failed to initialize ${selectedElevation.replace('-', ' ')} elevation overlay.`);
-                }
-            }
-        }
-
         // Error handling
         function showError(message) {
             const errorContainer = document.getElementById('error-container');
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';
-            errorDiv.innerHTML = `<strong>Layer Loading Issue:</strong> ${message}`;
+            errorDiv.innerHTML = `<strong>Data Loading Issue:</strong> ${message}`;
             errorContainer.appendChild(errorDiv);
-            
-            // Auto-remove error after 10 seconds
-            setTimeout(() => {
-                if (errorDiv.parentNode) {
-                    errorDiv.parentNode.removeChild(errorDiv);
-                }
-            }, 10000);
         }
 
         // Loading indicator
@@ -1042,6 +754,7 @@
                 }
             });
         }
+
 
         // Update display functions
         function updatePrairieDisplay() {
@@ -1279,33 +992,6 @@
 
         // Event listeners for controls
         function setupEventListeners() {
-            // Base layer radio buttons
-            document.querySelectorAll('input[name="base-layer"]').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    if (this.checked) {
-                        switchBaseLayer(this.value);
-                    }
-                });
-            });
-
-            // Imagery layer controls
-            document.getElementById('imagery-select').addEventListener('change', updateImageryLayer);
-            document.getElementById('imagery-opacity').addEventListener('input', function() {
-                document.getElementById('imagery-opacity-value').textContent = this.value + '%';
-                if (currentImageryLayer) {
-                    currentImageryLayer.setOpacity(this.value / 100);
-                }
-            });
-
-            // Elevation layer controls
-            document.getElementById('elevation-select').addEventListener('change', updateElevationLayer);
-            document.getElementById('elevation-opacity').addEventListener('input', function() {
-                document.getElementById('elevation-opacity-value').textContent = this.value + '%';
-                if (currentElevationLayer) {
-                    currentElevationLayer.setOpacity(this.value / 100);
-                }
-            });
-
             // Layer toggles
             document.getElementById('prairies').addEventListener('change', function() {
                 if (this.checked) {
@@ -1380,14 +1066,7 @@
 
         // Initialize the application
         async function initialize() {
-            console.log('Hill Prairie Research Application - Wisconsin DNR Base Layers Only');
-            console.log('All layers sourced from Wisconsin DNR for consistent projection');
-            
-            // Test base layer connectivity and provide fallback
-            currentBaseLayer.on('tileerror', function(e) {
-                console.warn('Wisconsin DNR basic basemap failed, trying topographic map');
-                switchBaseLayer('topo');
-            });
+            console.log('Hill Prairie Research Application - Demo Version');
             
             // Load data
             await loadGeoJSONData();
@@ -1399,8 +1078,7 @@
             map.addLayer(prairieLayer);
             updatePrairieDisplay();
             
-            console.log('Application initialized successfully with Wisconsin DNR base layers');
-            console.log('Available base layers: Basic, Leaf-On Imagery, Leaf-Off Imagery, Topographic, Color Infrared');
+            console.log('Application initialized successfully');
         }
 
         // Start the application
