@@ -12,7 +12,7 @@ import {
     generatePrairiePopupContent,
     generateSpeciesPopupContent,
     generateCorridorPopupContent,
-    generatePrairieAreaPopupContent,
+    generatePriorityAreaPopupContent,
     filterPrairieData
 } from './utils.js';
 
@@ -304,7 +304,7 @@ export function updatePriorityDisplay() {
                 });
                 
                 const popupContent = generatePrairieAreaPopupContent ? 
-                    generatePrairieAreaPopupContent(area) : 
+                    generatePriorityAreaPopupContent(area) : 
                     `<strong>Priority Area</strong><br>Priority Level: ${area.priority}`;
                     
                 polygon.bindPopup(popupContent);
