@@ -376,17 +376,17 @@
                 
                 <div id="inaturalist-status" class="api-status loading">
                     <span class="status-icon">🔄</span>
-                    <span>Loading iNaturalist observations...</span>
+                    <span>Loading iNaturalist observations from local data...</span>
                 </div>
                 
                 <button id="refresh-inaturalist" class="refresh-button" disabled>
-                    Refresh iNaturalist Data
+                    Refresh Filters
                 </button>
                 
                 <div class="taxon-filter">
-                    <label for="taxon-select">Filter by taxon:</label>
-                    <select id="taxon-select">
-                        <option value="">All taxa</option>
+                    <label for="taxon-select">Filter by taxon (informational):</label>
+                    <select id="taxon-select" disabled>
+                        <option value="">Data pre-filtered for prairie species</option>
                         <option value="47126">Plants (Plantae)</option>
                         <option value="47158">Flowering Plants</option>
                         <option value="47604">Grasses</option>
@@ -396,9 +396,10 @@
                 </div>
                 
                 <div class="filter-info">
-                    <strong>Search Area:</strong> Driftless Region (SW Wisconsin, NE Iowa, SE Minnesota, NW Illinois)<br>
-                    <strong>Quality Grade:</strong> Research Grade observations only<br>
-                    <strong>Date Range:</strong> Last 5 years
+                    <strong>Data Source:</strong> Pre-downloaded iNaturalist observations<br>
+                    <strong>Area:</strong> Remnant prairie sites + buffer zones<br>
+                    <strong>File:</strong> data/iNat.geojson<br>
+                    <strong>Active Filter:</strong> Minimum observations per species
                 </div>
             </div>
 
@@ -484,13 +485,12 @@
             </div>
 
             <div class="legend">
-                <h4>About iNaturalist Integration</h4>
+                <h4>About Your iNaturalist Data</h4>
                 <p style="margin-bottom: 10px; font-size: 0.9em; line-height: 1.4;">
-                    Live data from the <a href="https://www.inaturalist.org/" target="_blank" style="color: #74ac00; text-decoration: none;">iNaturalist API</a> 
-                    showing research-grade species observations in the Driftless Region. Data updates automatically and includes location coordinates, species identification, and observation metadata.
+                    Displaying pre-downloaded iNaturalist observations from within and around your identified prairie remnants. This targeted dataset provides comprehensive species documentation specific to your study areas without API limitations.
                 </p>
                 <p style="font-size: 0.8em; color: #666; margin-bottom: 15px;">
-                    Contribute to prairie research by uploading your own observations to iNaturalist!
+                    Data includes observations from research-grade citizen science contributions focused on prairie ecosystems in the Driftless Region.
                 </p>
             </div>
 
@@ -586,11 +586,8 @@
             nelng: -89.0   // Eastern boundary
         };
 
-        // iNaturalist API configuration
-        const INATURALIST_API_BASE = 'https://api.inaturalist.org/v1';
-        
         // Status management
-        function updateApiStatus(status, message) {
+        function updateDataStatus(status, message) {
             const statusEl = document.getElementById('inaturalist-status');
             const refreshBtn = document.getElementById('refresh-inaturalist');
             
@@ -639,96 +636,99 @@
             document.getElementById('loading').style.display = show ? 'block' : 'none';
         }
 
-        // Fetch data from iNaturalist API
-        async function fetchINaturalistData(taxonId = null, monthsAgo = 12) {
-            updateApiStatus('loading', 'Fetching observations from iNaturalist API...');
+        // Load iNaturalist GeoJSON data
+        async function loadINaturalistData() {
+            updateDataStatus('loading', 'Loading iNaturalist observations...');
             showLoading(true);
             
             try {
-                // Calculate date range
-                const endDate = new Date();
-                const startDate = new Date(endDate.getTime() - (monthsAgo * 30 * 24 * 60 * 60 * 1000));
-                
-                // Build API URL with parameters
-                const params = new URLSearchParams({
-                    place_id: 'any', // Will be filtered by lat/lng bounds
-                    quality_grade: 'research',
-                    per_page: 200, // Maximum allowed
-                    swlat: DRIFTLESS_BOUNDS.swlat,
-                    swlng: DRIFTLESS_BOUNDS.swlng,
-                    nelat: DRIFTLESS_BOUNDS.nelat,
-                    nelng: DRIFTLESS_BOUNDS.nelng,
-                    d1: startDate.toISOString().split('T')[0], // Start date
-                    d2: endDate.toISOString().split('T')[0], // End date
-                    order: 'desc',
-                    order_by: 'created_at'
-                });
-
-                if (taxonId) {
-                    params.append('taxon_id', taxonId);
-                }
-
-                const url = `${INATURALIST_API_BASE}/observations?${params}`;
-                console.log('Fetching from iNaturalist API:', url);
-
-                const response = await fetch(url);
+                console.log('Attempting to load: data/iNat.geojson');
+                const response = await fetch('data/iNat.geojson');
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
                 const data = await response.json();
-                console.log('iNaturalist API response:', data);
+                console.log('iNaturalist GeoJSON loaded:', data);
 
-                if (!data.results) {
-                    throw new Error('Invalid API response format');
+                if (!data.features || !Array.isArray(data.features)) {
+                    throw new Error('Invalid GeoJSON format - no features array found');
                 }
 
-                // Process the observations
+                // Process the iNaturalist observations
                 const processedData = [];
                 const speciesMap = new Map();
 
-                data.results.forEach(obs => {
-                    if (obs.location && obs.taxon) {
-                        const [lat, lng] = obs.location.split(',').map(Number);
+                data.features.forEach((feature, index) => {
+                    try {
+                        const props = feature.properties;
+                        const geometry = feature.geometry;
                         
-                        // Validate coordinates are within bounds
-                        if (lat >= DRIFTLESS_BOUNDS.swlat && lat <= DRIFTLESS_BOUNDS.nelat &&
-                            lng >= DRIFTLESS_BOUNDS.swlng && lng <= DRIFTLESS_BOUNDS.nelng) {
-                            
-                            const key = `${obs.taxon.id}-${lat.toFixed(4)}-${lng.toFixed(4)}`;
-                            
-                            if (speciesMap.has(key)) {
-                                speciesMap.get(key).count++;
-                                speciesMap.get(key).observations.push(obs);
-                            } else {
-                                speciesMap.set(key, {
-                                    id: obs.id,
-                                    taxon_id: obs.taxon.id,
-                                    name: obs.taxon.preferred_common_name || obs.taxon.name,
-                                    scientific: obs.taxon.name,
-                                    lat: lat,
-                                    lng: lng,
-                                    count: 1,
-                                    quality_grade: obs.quality_grade,
-                                    observed_on: obs.observed_on,
-                                    user: obs.user,
-                                    uri: obs.uri,
-                                    taxon: obs.taxon,
-                                    observations: [obs]
-                                });
-                            }
+                        if (!geometry || geometry.type !== 'Point') {
+                            console.warn(`Feature ${index} has invalid geometry`);
+                            return;
                         }
+
+                        const [lng, lat] = geometry.coordinates;
+                        
+                        // Validate coordinates
+                        if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+                            console.warn(`Feature ${index} has invalid coordinates`);
+                            return;
+                        }
+
+                        // Extract species information with various property name fallbacks
+                        const speciesInfo = {
+                            id: props.id || props.ID || props.observation_id || index,
+                            taxon_id: props.taxon_id || props.species_id || props.taxon?.id,
+                            name: props.common_name || props.species_name || props.taxon?.preferred_common_name || props.scientific_name || 'Unknown Species',
+                            scientific: props.scientific_name || props.taxon?.name || props.species_scientific || 'Unknown',
+                            lat: lat,
+                            lng: lng,
+                            quality_grade: props.quality_grade || props.grade || 'unknown',
+                            observed_on: props.observed_on || props.observation_date || props.date,
+                            user: props.user_login || props.observer || props.user?.login,
+                            uri: props.uri || props.url || `https://www.inaturalist.org/observations/${props.id || props.observation_id || ''}`,
+                            place_name: props.place_guess || props.location || props.place,
+                            // Keep original properties for debugging
+                            originalProps: props
+                        };
+
+                        // Create a unique key for grouping nearby observations of same species
+                        const locationKey = `${speciesInfo.taxon_id}-${lat.toFixed(3)}-${lng.toFixed(3)}`;
+                        
+                        if (speciesMap.has(locationKey)) {
+                            speciesMap.get(locationKey).count++;
+                            speciesMap.get(locationKey).observations.push(feature);
+                        } else {
+                            speciesMap.set(locationKey, {
+                                ...speciesInfo,
+                                count: 1,
+                                observations: [feature]
+                            });
+                        }
+                        
+                        // Log first few features for debugging
+                        if (index < 3) {
+                            console.log(`Sample iNaturalist feature ${index}:`, {
+                                name: speciesInfo.name,
+                                scientific: speciesInfo.scientific,
+                                coords: [lat, lng],
+                                properties: Object.keys(props)
+                            });
+                        }
+                        
+                    } catch (featureError) {
+                        console.warn(`Error processing feature ${index}:`, featureError);
                     }
                 });
 
-                // Convert to array and filter by minimum observations
-                const minObs = document.getElementById('min-obs-filter').value;
-                iNaturalistData = Array.from(speciesMap.values())
-                    .filter(species => species.count >= minObs);
-
-                const message = `Loaded ${iNaturalistData.length} species with ${data.results.length} total observations`;
-                updateApiStatus('success', message);
+                // Convert to array
+                iNaturalistData = Array.from(speciesMap.values());
+                
+                const message = `Loaded ${iNaturalistData.length} unique species locations from ${data.features.length} observations`;
+                updateDataStatus('success', message);
                 showSuccess(message);
                 
                 // Update last updated time
@@ -737,9 +737,9 @@
                 return iNaturalistData;
 
             } catch (error) {
-                console.error('Error fetching iNaturalist data:', error);
-                const errorMsg = `Failed to fetch data: ${error.message}`;
-                updateApiStatus('error', errorMsg);
+                console.error('Error loading iNaturalist GeoJSON:', error);
+                const errorMsg = `Failed to load iNat.geojson: ${error.message}`;
+                updateDataStatus('error', errorMsg);
                 showError(errorMsg);
                 return [];
             } finally {
@@ -807,10 +807,14 @@
         // Update species observations display
         function updateSpeciesDisplay() {
             const showINaturalist = document.getElementById('show-inaturalist').checked;
+            const minObs = document.getElementById('min-obs-filter').value;
             speciesLayer.clearLayers();
             
             if (showINaturalist && iNaturalistData.length > 0) {
-                iNaturalistData.forEach(species => {
+                // Filter by minimum observation count
+                const filteredData = iNaturalistData.filter(species => species.count >= minObs);
+                
+                filteredData.forEach(species => {
                     const marker = L.circleMarker([species.lat, species.lng], {
                         radius: getObservationRadius(species.count),
                         fillColor: '#74ac00',
@@ -831,25 +835,34 @@
                                 <span>Observations:</span>
                                 <strong>${species.count}</strong>
                             </div>
+                            ${species.quality_grade ? `
                             <div class="popup-metric">
                                 <span>Quality Grade:</span>
                                 <strong>${species.quality_grade}</strong>
-                            </div>
+                            </div>` : ''}
+                            ${species.observed_on ? `
                             <div class="popup-metric">
                                 <span>Last Observed:</span>
                                 <strong>${species.observed_on}</strong>
-                            </div>
+                            </div>` : ''}
+                            ${species.user ? `
                             <div class="popup-metric">
                                 <span>Observer:</span>
-                                <strong>${species.user?.login || 'Unknown'}</strong>
-                            </div>
+                                <strong>${species.user}</strong>
+                            </div>` : ''}
+                            ${species.place_name ? `
+                            <div class="popup-metric">
+                                <span>Location:</span>
+                                <strong>${species.place_name}</strong>
+                            </div>` : ''}
+                            ${species.uri ? `
                             <p style="margin-top: 10px; font-size: 0.9em;">
                                 <a href="${species.uri}" target="_blank" style="color: #74ac00; text-decoration: none;">
                                     View on iNaturalist →
                                 </a>
-                            </p>
+                            </p>` : ''}
                             <p style="margin-top: 5px; font-size: 0.8em; color: #666;">
-                                Live data from iNaturalist API • Research grade observations
+                                Observations from prairie remnant buffer zones
                             </p>
                         </div>
                     `;
@@ -857,6 +870,8 @@
                     marker.bindPopup(popupContent);
                     marker.addTo(speciesLayer);
                 });
+                
+                console.log(`Displayed ${filteredData.length} species observations`);
             }
         }
 
@@ -934,18 +949,25 @@
             document.getElementById('stat-species').textContent = uniqueSpecies;
         }
 
-        // Refresh iNaturalist data
-        async function refreshINaturalistData() {
-            const taxonId = document.getElementById('taxon-select').value || null;
-            const monthsAgo = document.getElementById('date-filter').value;
+        // Refresh/filter iNaturalist data based on current settings
+        function refreshINaturalistData() {
+            if (iNaturalistData.length === 0) {
+                showError('No iNaturalist data loaded. Check that data/iNat.geojson exists.');
+                return;
+            }
+
+            // Apply filters to existing data
+            const minObs = document.getElementById('min-obs-filter').value;
+            const filteredData = iNaturalistData.filter(species => species.count >= minObs);
             
-            await fetchINaturalistData(taxonId, monthsAgo);
+            console.log(`Filtered to ${filteredData.length} species with at least ${minObs} observations`);
             
             if (document.getElementById('species').checked) {
                 updateSpeciesDisplay();
             }
             
             updateStats();
+            showSuccess(`Filtered to ${filteredData.length} species meeting criteria`);
         }
 
         // Event listeners
@@ -1002,22 +1024,21 @@
 
             // Filter controls
             document.getElementById('date-filter').addEventListener('change', function() {
-                // Auto-refresh when date filter changes
-                if (iNaturalistData.length > 0) {
-                    refreshINaturalistData();
-                }
+                // Date filter is now informational only since we're using local data
+                console.log('Date filter changed to:', this.value, 'months');
             });
 
             document.getElementById('min-obs-filter').addEventListener('input', function() {
                 // Re-filter existing data when minimum observation count changes
                 if (document.getElementById('species').checked) {
                     updateSpeciesDisplay();
+                    updateStats();
                 }
             });
 
             document.getElementById('taxon-select').addEventListener('change', function() {
-                // Auto-refresh when taxon filter changes
-                refreshINaturalistData();
+                // Taxon filter is now informational only since we're using pre-filtered local data
+                console.log('Taxon filter changed to:', this.value);
             });
 
             // Refresh button
@@ -1045,8 +1066,8 @@
             map.addLayer(prairieLayer);
             updatePrairieDisplay();
             
-            // Load initial iNaturalist data
-            await fetchINaturalistData();
+            // Load initial iNaturalist data from GeoJSON file
+            await loadINaturalistData();
             
             // Add species layer if data was loaded successfully
             if (iNaturalistData.length > 0) {
