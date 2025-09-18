@@ -147,26 +147,115 @@
             font-size: 1.1em;
         }
 
-        .popup-content {
+        .enhanced-popup {
             font-family: 'Segoe UI', sans-serif;
+            max-width: 380px;
         }
 
-        .popup-content h3 {
+        .species-header h3 {
             color: #2c5530;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             border-bottom: 2px solid #28a745;
             padding-bottom: 5px;
+            font-size: 1.1em;
         }
 
-        .popup-metric {
-            display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-            padding: 3px 0;
+        .scientific-name {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 3px;
+            font-style: italic;
         }
 
-        .popup-metric strong {
-            color: #495057;
+        .taxonomic-rank {
+            color: #888;
+            font-size: 0.8em;
+            text-transform: capitalize;
+            margin-bottom: 10px;
+        }
+
+        .image-gallery {
+            margin: 10px 0;
+            text-align: center;
+            max-height: 90px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .obs-image {
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        .obs-image:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .no-image {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            margin: 10px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .observation-details {
+            margin: 12px 0;
+        }
+
+        .observation-description {
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .popup-links {
+            margin: 12px 0;
+        }
+
+        .popup-links a {
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 5px;
+            color: #74ac00;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .popup-links a:hover {
+            text-decoration: underline;
+        }
+
+        .data-source {
+            font-size: 0.8em;
+            color: #666;
+            text-align: center;
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+        }
+
+        .quality-research {
+            color: #28a745;
+        }
+
+        .quality-needs_id {
+            color: #ffc107;
+        }
+
+        .quality-casual {
+            color: #6c757d;
+        }
+
+        .enhanced-inat-popup .leaflet-popup-content {
+            margin: 8px 12px;
         }
 
         .connectivity-high { background-color: #28a745; }
@@ -778,18 +867,30 @@
                             return;
                         }
 
-                        // Extract species information with various property name fallbacks
+                        // Extract species information with enhanced property mapping based on your data structure
                         const speciesInfo = {
                             id: props.id || props.ID || props.observation_id || index,
-                            taxon_id: props.taxon_id || props.species_id || props.taxon?.id,
-                            name: props.common_name || props.species_name || props.taxon?.preferred_common_name || props.scientific_name || 'Unknown Species',
-                            scientific: props.scientific_name || props.taxon?.name || props.species_scientific || 'Unknown',
+                            taxon_id: props['Taxon_Id'] || props.taxon_id || props.species_id,
+                            name: props['Name'] || props.common_name || props.species_name || 'Unknown Species',
+                            scientific: props['Taxon_name'] || props.scientific_name || props.taxon_name || 'Unknown',
+                            rank: props['Rank'] || props.rank || '',
                             lat: lat,
                             lng: lng,
-                            quality_grade: props.quality_grade || props.grade || 'unknown',
-                            observed_on: props.observed_on || props.observation_date || props.date,
-                            user: props.user_login || props.observer || props.user?.login,
-                            uri: props.uri || props.url || `https://www.inaturalist.org/observations/${props.id || props.observation_id || ''}`,
+                            quality_grade: props['Quality'] || props.quality_grade || props.grade || 'unknown',
+                            observed_on: props['Date'] || props.observed_on || props.observation_date || props.date,
+                            observer_login: props['Observator_login'] || props.observer_login || props.user_login,
+                            observer_name: props['Observator_name'] || props.observer_name || props.user_name,
+                            description: props['Description'] || props.description || '',
+                            geoprivacy: props['Geoprivacy'] || props.geoprivacy || '',
+                            precision: props['Precision'] || props.precision || '',
+                            uri: props['Observation_url'] || props.uri || props.url || `https://www.inaturalist.org/observations/${props.id || ''}`,
+                            taxon_url: props['Taxon_url'] || props.taxon_url || '',
+                            // Extract image URLs - handle multiple picture columns
+                            images: [
+                                props['Picture_1'] || props.picture_1 || props.image_1,
+                                props['Picture_2'] || props.picture_2 || props.image_2,
+                                props['Picture_3'] || props.picture_3 || props.image_3
+                            ].filter(Boolean), // Remove null/undefined values
                             place_name: props.place_guess || props.location || props.place,
                             originalProps: props
                         };
@@ -1130,50 +1231,12 @@
                         fillOpacity: 0.8
                     });
                     
-                    const popupContent = `
-                        <div class="popup-content">
-                            <h3>${species.name}</h3>
-                            <div class="popup-metric">
-                                <span>Scientific Name:</span>
-                                <strong><em>${species.scientific}</em></strong>
-                            </div>
-                            <div class="popup-metric">
-                                <span>Observations:</span>
-                                <strong>${species.count}</strong>
-                            </div>
-                            ${species.quality_grade ? `
-                            <div class="popup-metric">
-                                <span>Quality Grade:</span>
-                                <strong>${species.quality_grade}</strong>
-                            </div>` : ''}
-                            ${species.observed_on ? `
-                            <div class="popup-metric">
-                                <span>Last Observed:</span>
-                                <strong>${species.observed_on}</strong>
-                            </div>` : ''}
-                            ${species.user ? `
-                            <div class="popup-metric">
-                                <span>Observer:</span>
-                                <strong>${species.user}</strong>
-                            </div>` : ''}
-                            ${species.place_name ? `
-                            <div class="popup-metric">
-                                <span>Location:</span>
-                                <strong>${species.place_name}</strong>
-                            </div>` : ''}
-                            ${species.uri ? `
-                            <p style="margin-top: 10px; font-size: 0.9em;">
-                                <a href="${species.uri}" target="_blank" style="color: #74ac00; text-decoration: none;">
-                                    View on iNaturalist →
-                                </a>
-                            </p>` : ''}
-                            <p style="margin-top: 5px; font-size: 0.8em; color: #666;">
-                                Observations from prairie remnant buffer zones
-                            </p>
-                        </div>
-                    `;
+                    const popupContent = createEnhancedPopup(species);
 
-                    marker.bindPopup(popupContent);
+                    marker.bindPopup(popupContent, {
+                        maxWidth: 400,
+                        className: 'enhanced-inat-popup'
+                    });
                     marker.addTo(speciesLayer);
                 });
                 
