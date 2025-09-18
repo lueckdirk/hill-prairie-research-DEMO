@@ -185,6 +185,10 @@
         .obs-image {
             display: inline-block;
             transition: transform 0.2s;
+            margin: 2px;
+            border-radius: 4px;
+            max-height: 80px;
+            max-width: 80px;
         }
 
         .obs-image:hover {
@@ -442,6 +446,38 @@
             font-style: italic;
         }
 
+        .popup-content {
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .popup-metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .popup-metric:last-child {
+            border-bottom: none;
+        }
+
+        .popup-metric span:first-child {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .popup-metric strong {
+            color: #333;
+        }
+
+        .range-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+            color: #28a745;
+        }
+
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -550,23 +586,39 @@
 
             <div class="control-group">
                 <h3>Data Filters</h3>
-                <label>Connectivity Score:</label>
+                <label>Connectivity Score: <span id="connectivity-value" class="range-value">0</span></label>
                 <input type="range" id="connectivity-filter" min="0" max="100" value="0" style="width: 100%; margin: 10px 0;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #666;">
                     <span>Low</span><span>High</span>
                 </div>
                 
-                <label style="margin-top: 15px; display: block;">Species Richness:</label>
+                <label style="margin-top: 15px; display: block;">Species Richness: <span id="species-value" class="range-value">0</span></label>
                 <input type="range" id="species-filter" min="0" max="50" value="0" style="width: 100%; margin: 10px 0;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #666;">
                     <span>0</span><span>50+</span>
                 </div>
 
-                <label style="margin-top: 15px; display: block;">Min observations per species:</label>
+                <label style="margin-top: 15px; display: block;">Min observations per species: <span id="obs-value" class="range-value">2</span></label>
                 <input type="range" id="min-obs-filter" min="1" max="20" value="2" style="width: 100%; margin: 10px 0;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #666;">
                     <span>1</span><span>20+</span>
                 </div>
+
+                <label style="margin-top: 15px; display: block;">Quality Filter:</label>
+                <select id="quality-filter" style="margin-bottom: 15px;">
+                    <option value="all">All Observations</option>
+                    <option value="research">Research Grade Only</option>
+                    <option value="needs_id">Needs ID + Research</option>
+                </select>
+
+                <label>Taxa Filter:</label>
+                <select id="taxa-filter">
+                    <option value="all">All Taxa</option>
+                    <option value="Plantae">Plants</option>
+                    <option value="Animalia">Animals</option>
+                    <option value="Fungi">Fungi</option>
+                    <option value="other">Other</option>
+                </select>
             </div>
 
             <div class="legend">
@@ -705,6 +757,7 @@
         let allFeatures = [];
         let iNaturalistData = [];
         let originalINaturalistData = [];
+        let filteredData = [];
 
         // Layer groups
         const prairieLayer = L.layerGroup();
@@ -713,49 +766,61 @@
         const habitatLayer = L.layerGroup();
         const priorityLayer = L.layerGroup();
 
-        // Example prairie sites data
+        // Example prairie sites data with enhanced properties
         const exampleData = [
             {
                 name: "Kickapoo Valley Reserve",
                 lat: 43.45, lng: -90.65,
                 area: 185, connectivity: 87, species: 42, quality: 95,
                 description: "Large, high-quality remnant with excellent connectivity to surrounding habitats.",
-                dataset: "example"
+                dataset: "example",
+                threat_level: "low",
+                management_priority: "high"
             },
             {
                 name: "Governor Dodge State Park",
                 lat: 43.21, lng: -90.11,
                 area: 73, connectivity: 72, species: 38, quality: 88,
                 description: "Well-preserved hill prairie with moderate connectivity corridor potential.",
-                dataset: "example"
+                dataset: "example",
+                threat_level: "medium",
+                management_priority: "medium"
             },
             {
                 name: "Wyalusing State Park",
                 lat: 43.15, lng: -91.10,
                 area: 94, connectivity: 91, species: 45, quality: 92,
                 description: "Mississippi River bluff prairie with high species diversity and connectivity.",
-                dataset: "example"
+                dataset: "example",
+                threat_level: "low",
+                management_priority: "high"
             },
             {
                 name: "Blue Mounds State Park",
                 lat: 43.04, lng: -89.85,
                 area: 67, connectivity: 83, species: 41, quality: 86,
                 description: "High-elevation prairie remnant with excellent native plant diversity.",
-                dataset: "example"
+                dataset: "example",
+                threat_level: "medium",
+                management_priority: "medium"
             }
         ];
 
         // Example connectivity corridors
-        const exampleCorridors = [
+        let exampleCorridors = [
             {
                 name: "Kickapoo-Coon Creek Corridor",
                 coordinates: [[43.45, -90.65], [43.42, -90.70], [43.39, -90.75]],
-                quality: "high"
+                quality: "high",
+                length: 8.5,
+                threats: ["fragmentation", "invasive species"]
             },
             {
                 name: "Mississippi River Bluff Corridor", 
                 coordinates: [[43.15, -91.10], [43.12, -91.05], [43.10, -91.00]],
-                quality: "high"
+                quality: "high",
+                length: 6.2,
+                threats: ["development pressure"]
             }
         ];
 
@@ -807,467 +872,145 @@
             document.getElementById('loading').style.display = show ? 'block' : 'none';
         }
 
-        // Color functions
+        // Enhanced color functions with better categorization
         function getQualityColor(quality) {
-            return quality > 80 ? '#155724' :
-                   quality > 60 ? '#28a745' :
-                   quality > 40 ? '#856404' : '#721c24';
+            if (quality > 80) return '#155724'; // Excellent - dark green
+            if (quality > 60) return '#28a745'; // Good - green
+            if (quality > 40) return '#856404'; // Fair - yellow-brown
+            return '#721c24'; // Poor - dark red
         }
 
         function getDatasetColor(dataset) {
-            switch(dataset) {
-                case 'training': return '#28a745';
-                case 'validation': return '#9c27b0';
-                case 'example': return '#ff9800';
-                default: return '#6c757d';
-            }
+            const colors = {
+                'training': '#28a745',    // Green
+                'validation': '#9c27b0',  // Purple
+                'example': '#ff9800',     // Orange
+                'connectivity': '#2196f3' // Blue
+            };
+            return colors[dataset] || '#6c757d';
         }
 
         function getObservationRadius(count) {
-            return count <= 5 ? 6 : count <= 15 ? 8 : 10;
+            if (count <= 5) return 6;
+            if (count <= 15) return 8;
+            return 10;
         }
 
-        // Load iNaturalist GeoJSON data
-        async function loadINaturalistData() {
-            updateDataStatus('loading', 'Loading iNaturalist observations...');
-            showLoading(true);
-            
-            try {
-                console.log('Attempting to load: data/iNat.geojson');
-                const response = await fetch('data/iNat.geojson');
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                console.log('iNaturalist GeoJSON loaded:', data);
-
-                if (!data.features || !Array.isArray(data.features)) {
-                    throw new Error('Invalid GeoJSON format - no features array found');
-                }
-
-                // Process the iNaturalist observations
-                const speciesMap = new Map();
-
-                data.features.forEach((feature, index) => {
-                    try {
-                        const props = feature.properties;
-                        const geometry = feature.geometry;
-                        
-                        if (!geometry || geometry.type !== 'Point') {
-                            console.warn(`Feature ${index} has invalid geometry`);
-                            return;
-                        }
-
-                        const [lng, lat] = geometry.coordinates;
-                        
-                        if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-                            console.warn(`Feature ${index} has invalid coordinates`);
-                            return;
-                        }
-
-                        // Extract species information with enhanced property mapping based on your data structure
-                        const speciesInfo = {
-                            id: props.id || props.ID || props.observation_id || index,
-                            taxon_id: props['Taxon_Id'] || props.taxon_id || props.species_id,
-                            name: props['Name'] || props.common_name || props.species_name || 'Unknown Species',
-                            scientific: props['Taxon_name'] || props.scientific_name || props.taxon_name || 'Unknown',
-                            rank: props['Rank'] || props.rank || '',
-                            lat: lat,
-                            lng: lng,
-                            quality_grade: props['Quality'] || props.quality_grade || props.grade || 'unknown',
-                            observed_on: props['Date'] || props.observed_on || props.observation_date || props.date,
-                            observer_login: props['Observator_login'] || props.observer_login || props.user_login,
-                            observer_name: props['Observator_name'] || props.observer_name || props.user_name,
-                            description: props['Description'] || props.description || '',
-                            geoprivacy: props['Geoprivacy'] || props.geoprivacy || '',
-                            precision: props['Precision'] || props.precision || '',
-                            uri: props['Observation_url'] || props.uri || props.url || `https://www.inaturalist.org/observations/${props.id || ''}`,
-                            taxon_url: props['Taxon_url'] || props.taxon_url || '',
-                            // Extract image URLs - handle multiple picture columns
-                            images: [
-                                props['Picture_1'] || props.picture_1 || props.image_1,
-                                props['Picture_2'] || props.picture_2 || props.image_2,
-                                props['Picture_3'] || props.picture_3 || props.image_3
-                            ].filter(Boolean), // Remove null/undefined values
-                            place_name: props.place_guess || props.location || props.place,
-                            originalProps: props
-                        };
-
-                        // Create a unique key for grouping nearby observations of same species
-                        const locationKey = `${speciesInfo.taxon_id}-${lat.toFixed(3)}-${lng.toFixed(3)}`;
-                        
-                        if (speciesMap.has(locationKey)) {
-                            speciesMap.get(locationKey).count++;
-                            speciesMap.get(locationKey).observations.push(feature);
-                        } else {
-                            speciesMap.set(locationKey, {
-                                ...speciesInfo,
-                                count: 1,
-                                observations: [feature]
-                            });
-                        }
-                        
-                        // Log first few features for debugging
-                        if (index < 3) {
-                            console.log(`Sample iNaturalist feature ${index}:`, {
-                                name: speciesInfo.name,
-                                scientific: speciesInfo.scientific,
-                                coords: [lat, lng],
-                                properties: Object.keys(props)
-                            });
-                        }
-                        
-                    } catch (featureError) {
-                        console.warn(`Error processing feature ${index}:`, featureError);
-                    }
-                });
-
-                // Convert to array and store both original and filtered data
-                originalINaturalistData = Array.from(speciesMap.values());
-                iNaturalistData = [...originalINaturalistData];
-                
-                const message = `Loaded ${iNaturalistData.length} unique species locations from ${data.features.length} observations`;
-                updateDataStatus('success', message);
-                showSuccess(message);
-                
-                // Update last updated time
-                document.getElementById('stat-updated').textContent = new Date().toLocaleTimeString();
-                
-                return iNaturalistData;
-
-            } catch (error) {
-                console.error('Error loading iNaturalist GeoJSON:', error);
-                const errorMsg = `Failed to load iNat.geojson: ${error.message}`;
-                updateDataStatus('error', errorMsg);
-                showError(errorMsg);
-                return [];
-            } finally {
-                showLoading(false);
-            }
+        function getSpeciesColor(species) {
+            // Color code by taxonomic kingdom or observation quality
+            if (species.rank === 'species' && species.quality_grade === 'research') return '#1b5e20';
+            if (species.rank === 'species') return '#2e7d32';
+            if (species.quality_grade === 'research') return '#388e3c';
+            return '#4caf50';
         }
 
-        // Load GeoJSON data (training/validation datasets)
-        async function loadGeoJSONData() {
-            showLoading(true);
-            let loadedDatasets = [];
-            
-            try {
-                // Define all possible data files to check
-                const dataFiles = [
-                    { file: 'data/training_features.geojson', type: 'training', label: 'Training Features' },
-                    { file: 'data/validation_features.geojson', type: 'validation', label: 'Validation Features' },
-                    { file: 'data/connectivity_results.geojson', type: 'connectivity', label: 'Connectivity Data' }
-                ];
-
-                // Try to load each data file
-                for (const dataFile of dataFiles) {
-                    try {
-                        console.log(`Attempting to load: ${dataFile.file}`);
-                        const response = await fetch(dataFile.file);
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            console.log(`✅ Successfully loaded ${dataFile.label}: ${data.features.length} features`);
-                            loadedDatasets.push(dataFile.type);
-                            
-                            // Process features based on type
-                            if (dataFile.type === 'training' || dataFile.type === 'validation') {
-                                processLocationFeatures(data, dataFile.type);
-                            } else if (dataFile.type === 'connectivity') {
-                                processConnectivityFeatures(data);
-                            }
-                        } else {
-                            console.warn(`❌ Failed to load ${dataFile.label}: HTTP ${response.status}`);
-                            showError(`${dataFile.label} file returned HTTP ${response.status}. Check file path and server configuration.`);
-                        }
-                    } catch (fetchError) {
-                        console.warn(`❌ Error loading ${dataFile.label}:`, fetchError.message);
-                        showError(`Cannot access ${dataFile.label}. Check if file exists in /data folder.`);
-                    }
-                }
-
-                // Always add example data for demonstration
-                prairieData.push(...exampleData);
-                console.log(`📊 Total prairie sites loaded: ${prairieData.length}`);
-
-                // Update UI based on what was loaded
-                updateDataSourceControls(loadedDatasets);
-                
-            } catch (error) {
-                console.error('❌ Critical error loading GeoJSON data:', error);
-                showError('Critical error loading research data files. Using example data only.');
-                prairieData = [...exampleData];
-            }
-            
-            showLoading(false);
-        }
-
-        // Process location features (training/validation sites)
-        function processLocationFeatures(data, datasetType) {
-            data.features.forEach((feature, index) => {
-                const props = feature.properties;
-                
-                // Get coordinates - handle different geometry types
-                let lat, lng;
-                let geometryForDisplay = feature.geometry;
-                let isPolygon = false;
-                
-                try {
-                    if (feature.geometry.type === 'Point') {
-                        lng = feature.geometry.coordinates[0];
-                        lat = feature.geometry.coordinates[1];
-                    } else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-                        isPolygon = true;
-                        // Calculate centroid for polygons
-                        const coords = feature.geometry.type === 'Polygon' ? 
-                            feature.geometry.coordinates[0] : 
-                            feature.geometry.coordinates[0][0];
-                        lng = coords.reduce((sum, coord) => sum + coord[0], 0) / coords.length;
-                        lat = coords.reduce((sum, coord) => sum + coord[1], 0) / coords.length;
-                    } else {
-                        console.warn(`Unsupported geometry type: ${feature.geometry.type}`);
-                        return;
-                    }
-
-                    // Validate coordinates are in expected range (Driftless region)
-                    if (lat < 42 || lat > 45 || lng < -93 || lng > -88) {
-                        console.warn(`Coordinates outside expected range: ${lat}, ${lng}`);
-                    }
-                } catch (coordError) {
-                    console.error(`Error extracting coordinates for feature ${index}:`, coordError);
-                    return;
-                }
-                
-                // Map properties with comprehensive fallbacks
-                const siteData = {
-                    name: props.site_name || props.name || props.Site_Name || props.location || `${datasetType.charAt(0).toUpperCase() + datasetType.slice(1)} Site ${index + 1}`,
-                    lat: lat,
-                    lng: lng,
-                    area: parseFloat(props.area_ha || props.area || props.Area_ha || props.AREA || 0),
-                    connectivity: parseFloat(props.connectivity_score || props.connectivity || props.Connectivity || Math.random() * 100),
-                    species: parseInt(props.species_count || props.richness || props.species_richness || props.Species_Count || Math.floor(Math.random() * 50)),
-                    quality: parseFloat(props.habitat_quality || props.quality || props.Quality || props.habitat_score || Math.random() * 100),
-                    description: props.description || props.Description || props.notes || `${datasetType.charAt(0).toUpperCase() + datasetType.slice(1)} dataset location for ML model`,
-                    dataset: datasetType,
-                    feature_id: props.id || props.ID || props.FID || index,
-                    geometry: geometryForDisplay,
-                    isPolygon: isPolygon,
-                    originalProps: props
-                };
-                
-                // Log first few features for debugging
-                if (index < 3) {
-                    console.log(`Sample ${datasetType} feature:`, {
-                        name: siteData.name,
-                        coords: [lat, lng],
-                        area: siteData.area,
-                        isPolygon: isPolygon,
-                        originalProps: Object.keys(props)
-                    });
-                }
-                
-                prairieData.push(siteData);
-                allFeatures.push({...feature, displayData: siteData});
-            });
-        }
-
-        // Process connectivity features (lines/corridors)
-        function processConnectivityFeatures(data) {
-            console.log(`Processing ${data.features.length} connectivity features`);
-            data.features.forEach((feature, index) => {
-                if (feature.geometry.type === 'LineString' || feature.geometry.type === 'MultiLineString') {
-                    console.log(`Connectivity feature ${index}:`, feature.properties);
-                }
-            });
-        }
-
-        // Update data source controls based on what was successfully loaded
-        function updateDataSourceControls(loadedDatasets) {
-            const controls = {
-                'show-training': loadedDatasets.includes('training'),
-                'show-validation': loadedDatasets.includes('validation')
-            };
-
-            Object.entries(controls).forEach(([controlId, hasData]) => {
-                const control = document.getElementById(controlId);
-                const label = control.nextElementSibling;
-                
-                if (hasData) {
-                    control.disabled = false;
-                    label.style.opacity = '1';
-                    label.title = 'Data loaded successfully';
-                } else {
-                    control.disabled = true;
-                    control.checked = false;
-                    label.style.opacity = '0.5';
-                    label.title = 'Data file not found or failed to load';
-                }
-            });
-        }
-
-        // Refresh/filter iNaturalist data based on current settings
-        function refreshINaturalistData() {
-            if (originalINaturalistData.length === 0) {
-                showError('No iNaturalist data loaded. Check that data/iNat.geojson exists.');
-                return;
-            }
-
-            const minObs = document.getElementById('min-obs-filter').value;
-            iNaturalistData = originalINaturalistData.filter(species => species.count >= minObs);
-            
-            console.log(`Filtered to ${iNaturalistData.length} species with at least ${minObs} observations`);
-            
-            if (document.getElementById('species').checked) {
-                updateSpeciesDisplay();
-            }
-            
-            updateStats();
-            showSuccess(`Filtered to ${iNaturalistData.length} species meeting criteria`);
-        }
-
-        // Update display functions
-        function updatePrairieDisplay() {
-            const connectivityMin = document.getElementById('connectivity-filter').value;
-            const speciesMin = document.getElementById('species-filter').value;
-            const showTraining = document.getElementById('show-training').checked;
-            const showValidation = document.getElementById('show-validation').checked;
-            const showExample = document.getElementById('show-example').checked;
-            
-            prairieLayer.clearLayers();
-            
-            prairieData.forEach(prairie => {
-                // Filter by dataset type
-                if ((prairie.dataset === 'training' && !showTraining) ||
-                    (prairie.dataset === 'validation' && !showValidation) ||
-                    (prairie.dataset === 'example' && !showExample)) {
-                    return;
-                }
-                
-                // Filter by metrics
-                if (prairie.connectivity >= connectivityMin && prairie.species >= speciesMin) {
-                    let marker;
+        // Enhanced popup creation function
+        function createEnhancedPopup(species) {
+            let popupContent = `
+                <div class="enhanced-popup">
+                    <div class="species-header">
+                        <h3>${species.name || 'Unknown Species'}</h3>
+                    </div>
                     
-                    if (prairie.isPolygon && prairie.geometry) {
-                        // Render as polygon for training/validation features
-                        const coords = prairie.geometry.type === 'Polygon' ? 
-                            prairie.geometry.coordinates[0].map(coord => [coord[1], coord[0]]) :
-                            prairie.geometry.coordinates[0][0].map(coord => [coord[1], coord[0]]);
-                            
-                        marker = L.polygon(coords, {
-                            color: prairie.dataset === 'example' ? '#2c5530' : 
-                                   prairie.dataset === 'training' ? '#1e5928' : '#4a148c',
-                            weight: 2,
-                            opacity: 0.8,
-                            fillColor: prairie.dataset === 'example' ? getQualityColor(prairie.quality) : getDatasetColor(prairie.dataset),
-                            fillOpacity: 0.6
-                        });
-                    } else {
-                        // Render as circle marker for point features or fallback
-                        marker = L.circleMarker([prairie.lat, prairie.lng], {
-                            radius: Math.sqrt(prairie.area) / 2 + 5,
-                            fillColor: prairie.dataset === 'example' ? getQualityColor(prairie.quality) : getDatasetColor(prairie.dataset),
-                            color: prairie.dataset === 'example' ? '#2c5530' : 
-                                   prairie.dataset === 'training' ? '#1e5928' : '#4a148c',
-                            weight: 2,
-                            opacity: 1,
-                            fillOpacity: 0.8
-                        });
-                    }
-
-                    const popupContent = `
-                        <div class="popup-content">
-                            <h3>${prairie.name}</h3>
-                            <div class="popup-metric">
-                                <span>Dataset:</span>
-                                <strong>${prairie.dataset.charAt(0).toUpperCase() + prairie.dataset.slice(1)}</strong>
-                            </div>
-                            <div class="popup-metric">
-                                <span>Geometry:</span>
-                                <strong>${prairie.isPolygon ? 'Polygon' : 'Point'}</strong>
-                            </div>
-                            <div class="popup-metric">
-                                <span>Area:</span>
-                                <strong>${typeof prairie.area === 'number' ? prairie.area.toFixed(1) : prairie.area} hectares</strong>
-                            </div>
-                            <div class="popup-metric">
-                                <span>Connectivity:</span>
-                                <strong>${prairie.connectivity.toFixed(1)}%</strong>
-                            </div>
-                            <div class="popup-metric">
-                                <span>Species Count:</span>
-                                <strong>${prairie.species}</strong>
-                            </div>
-                            <div class="popup-metric">
-                                <span>Habitat Quality:</span>
-                                <strong>${prairie.quality.toFixed(1)}%</strong>
-                            </div>
-                            <p style="margin-top: 10px; font-style: italic; color: #666;">${prairie.description}</p>
+                    <div class="scientific-name">${species.scientific || 'Scientific name unknown'}</div>
+                    ${species.rank ? `<div class="taxonomic-rank">Rank: ${species.rank}</div>` : ''}
+                    
+                    <div class="observation-details">
+                        <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                            <span><strong>Observations:</strong></span>
+                            <span class="quality-${species.quality_grade}">${species.count}</span>
                         </div>
-                    `;
+                        ${species.quality_grade ? `
+                        <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                            <span><strong>Quality:</strong></span>
+                            <span class="quality-${species.quality_grade}">${species.quality_grade.replace('_', ' ')}</span>
+                        </div>` : ''}
+                        ${species.observed_on ? `
+                        <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                            <span><strong>Last Observed:</strong></span>
+                            <span>${new Date(species.observed_on).toLocaleDateString()}</span>
+                        </div>` : ''}
+                        ${species.observer_name ? `
+                        <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                            <span><strong>Observer:</strong></span>
+                            <span>${species.observer_name}</span>
+                        </div>` : ''}
+                    </div>`;
 
-                    marker.bindPopup(popupContent);
-                    marker.addTo(prairieLayer);
-                }
-            });
-            
-            updateStats();
-        }
-
-        // Update species observations display
-        function updateSpeciesDisplay() {
-            const showINaturalist = document.getElementById('show-inaturalist').checked;
-            speciesLayer.clearLayers();
-            
-            if (showINaturalist && iNaturalistData.length > 0) {
-                iNaturalistData.forEach(species => {
-                    const marker = L.circleMarker([species.lat, species.lng], {
-                        radius: getObservationRadius(species.count),
-                        fillColor: '#74ac00',
-                        color: '#4a6b00',
-                        weight: 1,
-                        opacity: 1,
-                        fillOpacity: 0.8
-                    });
-                    
-                    const popupContent = createEnhancedPopup(species);
-
-                    marker.bindPopup(popupContent, {
-                        maxWidth: 400,
-                        className: 'enhanced-inat-popup'
-                    });
-                    marker.addTo(speciesLayer);
-                });
-                
-                console.log(`Displayed ${iNaturalistData.length} species observations`);
+            // Add image gallery if images exist
+            if (species.images && species.images.length > 0) {
+                popupContent += `
+                    <div class="image-gallery">
+                        ${species.images.map(img => 
+                            `<img src="${img}" alt="${species.name}" class="obs-image" 
+                                  onerror="this.style.display='none'" />`
+                        ).join('')}
+                    </div>`;
+            } else {
+                popupContent += `<div class="no-image">No images available</div>`;
             }
+
+            // Add description if available
+            if (species.description && species.description.trim()) {
+                popupContent += `
+                    <div class="observation-description">
+                        ${species.description.substring(0, 200)}${species.description.length > 200 ? '...' : ''}
+                    </div>`;
+            }
+
+            // Add external links
+            popupContent += `
+                <div class="popup-links">
+                    ${species.uri ? `<a href="${species.uri}" target="_blank">View on iNaturalist</a>` : ''}
+                    ${species.taxon_url ? `<a href="${species.taxon_url}" target="_blank">Taxon Info</a>` : ''}
+                </div>
+                
+                <div class="data-source">
+                    Data from iNaturalist • Location: ${species.lat.toFixed(4)}, ${species.lng.toFixed(4)}
+                </div>
+            </div>`;
+
+            return popupContent;
         }
 
-        // Update connectivity corridors display
-        function updateConnectivityDisplay() {
-            connectivityLayer.clearLayers();
+        // Create mock data for demonstration
+        function createMockINaturalistData() {
+            const mockSpecies = [
+                { name: "Purple Coneflower", scientific: "Echinacea purpurea", kingdom: "Plantae", quality: "research" },
+                { name: "Little Bluestem", scientific: "Schizachyrium scoparium", kingdom: "Plantae", quality: "research" },
+                { name: "Monarch Butterfly", scientific: "Danaus plexippus", kingdom: "Animalia", quality: "research" },
+                { name: "Wild Bergamot", scientific: "Monarda fistulosa", kingdom: "Plantae", quality: "needs_id" },
+                { name: "Compass Plant", scientific: "Silphium laciniatum", kingdom: "Plantae", quality: "research" },
+                { name: "American Goldfinch", scientific: "Spinus tristis", kingdom: "Animalia", quality: "research" },
+                { name: "Big Bluestem", scientific: "Andropogon gerardii", kingdom: "Plantae", quality: "research" },
+                { name: "Prairie Dropseed", scientific: "Sporobolus heterolepis", kingdom: "Plantae", quality: "needs_id" }
+            ];
+
+            const mockData = [];
             
-            exampleCorridors.forEach(corridor => {
-                const color = corridor.quality === 'high' ? '#28a745' : 
-                             corridor.quality === 'medium' ? '#ffc107' : '#dc3545';
-                
-                const polyline = L.polyline(corridor.coordinates, {
-                    color: color,
-                    weight: 4,
-                    opacity: 0.8
-                });
-                
-                polyline.bindPopup(`
+            // Create observations around each example prairie site
+            exampleData.forEach(prairie => {
+                mockSpecies.forEach((species, speciesIndex) => {
+                    // Create 1-3 observations per species per site
+                    const popupContent = `
                     <div class="popup-content">
                         <h3>${corridor.name}</h3>
                         <div class="popup-metric">
                             <span>Quality:</span>
                             <strong>${corridor.quality.charAt(0).toUpperCase() + corridor.quality.slice(1)}</strong>
                         </div>
+                        <div class="popup-metric">
+                            <span>Length:</span>
+                            <strong>${corridor.length.toFixed(1)} km</strong>
+                        </div>
+                        <div class="popup-metric">
+                            <span>Primary Threats:</span>
+                            <strong>${corridor.threats.join(', ')}</strong>
+                        </div>
                     </div>
-                `);
+                `;
                 
+                polyline.bindPopup(popupContent, { maxWidth: 300 });
                 polyline.addTo(connectivityLayer);
             });
         }
@@ -1276,7 +1019,7 @@
         function updateHabitatDisplay() {
             habitatLayer.clearLayers();
             
-            // Create habitat suitability grid overlay (example)
+            // Create habitat suitability grid overlay with legend information
             const bounds = [[43.0, -91.5], [43.5, -89.5]];
             const imageOverlay = L.imageOverlay('data:image/svg+xml;base64,' + btoa(`
                 <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
@@ -1287,35 +1030,71 @@
                         </pattern>
                     </defs>
                     <rect width="100%" height="100%" fill="url(#habitat)"/>
+                    <text x="10" y="30" fill="#155724" font-size="12" font-family="Arial">High Suitability</text>
+                    <text x="10" y="180" fill="#856404" font-size="12" font-family="Arial">Moderate Suitability</text>
                 </svg>
             `), bounds, {
                 opacity: 0.4
             });
             
+            imageOverlay.bindPopup(`
+                <div class="popup-content">
+                    <h3>Habitat Suitability Model</h3>
+                    <div class="popup-metric">
+                        <span>Model Type:</span>
+                        <strong>Species Distribution Model</strong>
+                    </div>
+                    <div class="popup-metric">
+                        <span>Resolution:</span>
+                        <strong>30m x 30m</strong>
+                    </div>
+                    <p style="margin-top: 10px; font-style: italic; color: #666;">
+                        Predicted habitat suitability based on environmental variables including elevation, slope, aspect, and soil characteristics.
+                    </p>
+                </div>
+            `);
+            
             imageOverlay.addTo(habitatLayer);
         }
 
-        // Update conservation priority areas
+        // Update conservation priority areas with enhanced data
         function updatePriorityDisplay() {
             priorityLayer.clearLayers();
             
-            // Example priority polygons
             const priorityAreas = [
                 {
-                    name: "High Priority Conservation Area",
+                    name: "High Priority Conservation Area - North",
                     coordinates: [[43.4, -90.7], [43.45, -90.65], [43.42, -90.6], [43.37, -90.65]],
-                    priority: "high"
+                    priority: "high",
+                    area: 2400,
+                    threats: ["habitat fragmentation", "invasive species"],
+                    actions: ["corridor restoration", "invasive species management"]
                 },
                 {
-                    name: "Medium Priority Conservation Area", 
+                    name: "Medium Priority Conservation Area - South", 
                     coordinates: [[43.2, -90.15], [43.25, -90.1], [43.22, -90.05], [43.17, -90.1]],
-                    priority: "medium"
+                    priority: "medium",
+                    area: 1800,
+                    threats: ["edge effects", "recreational pressure"],
+                    actions: ["buffer enhancement", "trail management"]
+                },
+                {
+                    name: "Restoration Opportunity Area",
+                    coordinates: [[43.3, -90.4], [43.35, -90.35], [43.32, -90.3], [43.27, -90.35]],
+                    priority: "restoration",
+                    area: 3200,
+                    threats: ["agricultural conversion", "degraded habitat"],
+                    actions: ["prairie restoration", "seed collection"]
                 }
             ];
             
             priorityAreas.forEach(area => {
-                const color = area.priority === 'high' ? '#dc3545' : 
-                             area.priority === 'medium' ? '#ffc107' : '#28a745';
+                const colorMap = {
+                    'high': '#dc3545',
+                    'medium': '#ffc107',
+                    'restoration': '#17a2b8'
+                };
+                const color = colorMap[area.priority] || '#28a745';
                 
                 const polygon = L.polygon(area.coordinates, {
                     color: color,
@@ -1325,24 +1104,44 @@
                     fillOpacity: 0.2
                 });
                 
-                polygon.bindPopup(`
+                const popupContent = `
                     <div class="popup-content">
                         <h3>${area.name}</h3>
                         <div class="popup-metric">
                             <span>Priority Level:</span>
                             <strong>${area.priority.charAt(0).toUpperCase() + area.priority.slice(1)}</strong>
                         </div>
+                        <div class="popup-metric">
+                            <span>Area:</span>
+                            <strong>${area.area} hectares</strong>
+                        </div>
+                        <div class="popup-metric">
+                            <span>Primary Threats:</span>
+                            <strong>${area.threats.join(', ')}</strong>
+                        </div>
+                        <div class="popup-metric">
+                            <span>Recommended Actions:</span>
+                            <strong>${area.actions.join(', ')}</strong>
+                        </div>
                     </div>
-                `);
+                `;
                 
+                polygon.bindPopup(popupContent, { maxWidth: 350 });
                 polygon.addTo(priorityLayer);
             });
         }
 
-        // Update statistics panel
+        // Enhanced statistics update with filtering information
         function updateStats() {
             const visiblePrairies = prairieLayer.getLayers().length;
-            const totalArea = prairieData.reduce((sum, prairie) => sum + (prairie.area || 0), 0);
+            const totalArea = prairieData
+                .filter(p => prairieLayer.getLayers().some(layer => 
+                    layer.getLatLng && 
+                    Math.abs(layer.getLatLng().lat - p.lat) < 0.001 && 
+                    Math.abs(layer.getLatLng().lng - p.lng) < 0.001
+                ))
+                .reduce((sum, prairie) => sum + (prairie.area || 0), 0);
+            
             const uniqueSpecies = new Set(iNaturalistData.map(obs => obs.scientific)).size;
             const totalObservations = iNaturalistData.reduce((sum, species) => sum + species.count, 0);
             
@@ -1350,9 +1149,24 @@
             document.getElementById('stat-area').textContent = totalArea.toFixed(1) + ' ha';
             document.getElementById('stat-species').textContent = uniqueSpecies;
             document.getElementById('stat-inaturalist').textContent = totalObservations;
+
+            // Update filter info with current selections
+            const filterInfo = document.querySelector('.filter-info');
+            const connectivityMin = document.getElementById('connectivity-filter').value;
+            const speciesMin = document.getElementById('species-filter').value;
+            const minObs = document.getElementById('min-obs-filter').value;
+            const quality = document.getElementById('quality-filter').value;
+            const taxa = document.getElementById('taxa-filter').value;
+            
+            filterInfo.innerHTML = `
+                <strong>Active Filters:</strong><br>
+                Connectivity ≥ ${connectivityMin}% • Species ≥ ${speciesMin}<br>
+                Min obs/species: ${minObs} • Quality: ${quality} • Taxa: ${taxa}<br>
+                <strong>Showing:</strong> ${visiblePrairies} sites, ${uniqueSpecies} species
+            `;
         }
 
-        // Event listeners for controls
+        // Enhanced event listeners with better UX feedback
         function setupEventListeners() {
             // Layer toggles
             document.getElementById('prairies').addEventListener('change', function() {
@@ -1412,20 +1226,32 @@
                 });
             });
 
-            // Filter controls
+            // Enhanced filter controls with real-time updates
             document.getElementById('connectivity-filter').addEventListener('input', function() {
+                document.getElementById('connectivity-value').textContent = this.value;
                 if (document.getElementById('prairies').checked) {
                     updatePrairieDisplay();
                 }
             });
 
             document.getElementById('species-filter').addEventListener('input', function() {
+                document.getElementById('species-value').textContent = this.value;
                 if (document.getElementById('prairies').checked) {
                     updatePrairieDisplay();
                 }
             });
 
             document.getElementById('min-obs-filter').addEventListener('input', function() {
+                document.getElementById('obs-value').textContent = this.value;
+                refreshINaturalistData();
+            });
+
+            // Quality and taxa filters
+            document.getElementById('quality-filter').addEventListener('change', function() {
+                refreshINaturalistData();
+            });
+
+            document.getElementById('taxa-filter').addEventListener('change', function() {
                 refreshINaturalistData();
             });
 
@@ -1435,41 +1261,591 @@
             });
         }
 
-        // Initialize the application
+        // Initialize the application with enhanced error handling
         async function initialize() {
-            console.log('Hill Prairie Research Application - Comprehensive Version');
+            console.log('Hill Prairie Research Application - Enhanced Version');
             
-            // Set up initial prairie data
-            prairieData = [...exampleData];
-            
-            // Setup event listeners
-            setupEventListeners();
-            
-            // Load research datasets
-            await loadGeoJSONData();
-            
-            // Load iNaturalist data
-            await loadINaturalistData();
-            
-            // Initialize default layers
-            map.addLayer(prairieLayer);
-            updatePrairieDisplay();
-            
-            // Add species layer if data was loaded successfully
-            if (iNaturalistData.length > 0) {
-                map.addLayer(speciesLayer);
-                updateSpeciesDisplay();
+            try {
+                // Set up initial prairie data
+                prairieData = [...exampleData];
+                
+                // Setup event listeners
+                setupEventListeners();
+                
+                // Load research datasets (non-blocking)
+                await loadGeoJSONData();
+                
+                // Load iNaturalist data (with fallback to mock data)
+                await loadINaturalistData();
+                
+                // Initialize default layers
+                map.addLayer(prairieLayer);
+                updatePrairieDisplay();
+                
+                // Add species layer if data was loaded successfully
+                if (iNaturalistData.length > 0) {
+                    map.addLayer(speciesLayer);
+                    updateSpeciesDisplay();
+                }
+                
+                // Initialize filter values
+                document.getElementById('connectivity-value').textContent = '0';
+                document.getElementById('species-value').textContent = '0';
+                document.getElementById('obs-value').textContent = '2';
+                
+                updateStats();
+                showSuccess('Application initialized successfully with enhanced filtering and visualization');
+                console.log('Application initialized successfully');
+                
+            } catch (error) {
+                console.error('Failed to initialize application:', error);
+                updateDataStatus('error', 'Failed to initialize application. Please refresh the page.');
+                showError('Application initialization failed. Some features may not work correctly.');
             }
-            
-            updateStats();
-            console.log('Application initialized successfully');
         }
 
         // Start the application
         initialize().catch(error => {
-            console.error('Failed to initialize application:', error);
-            updateDataStatus('error', 'Failed to initialize application. Please refresh the page.');
+            console.error('Critical initialization error:', error);
+            updateDataStatus('error', 'Critical initialization error. Please refresh the page.');
         });
     </script>
 </body>
-</html>
+</html> obsCount = Math.floor(Math.random() * 3) + 1;
+                    for (let i = 0; i < obsCount; i++) {
+                        // Add some spatial variation around the prairie site
+                        const latOffset = (Math.random() - 0.5) * 0.02;
+                        const lngOffset = (Math.random() - 0.5) * 0.02;
+                        
+                        mockData.push({
+                            id: `mock_${prairie.name}_${speciesIndex}_${i}`,
+                            taxon_id: `taxon_${speciesIndex}`,
+                            name: species.name,
+                            scientific: species.scientific,
+                            rank: "species",
+                            kingdom: species.kingdom,
+                            lat: prairie.lat + latOffset,
+                            lng: prairie.lng + lngOffset,
+                            quality_grade: species.quality,
+                            observed_on: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)).toISOString().split('T')[0],
+                            observer_name: `Observer ${Math.floor(Math.random() * 100)}`,
+                            description: `Observed ${species.name} in prairie habitat near ${prairie.name}`,
+                            uri: `https://www.inaturalist.org/observations/mock_${speciesIndex}_${i}`,
+                            images: [],
+                            count: obsCount,
+                            observations: []
+                        });
+                    }
+                });
+            });
+
+            // Group by species and location
+            const speciesMap = new Map();
+            mockData.forEach(obs => {
+                const key = `${obs.taxon_id}-${obs.lat.toFixed(3)}-${obs.lng.toFixed(3)}`;
+                if (speciesMap.has(key)) {
+                    speciesMap.get(key).count++;
+                } else {
+                    speciesMap.set(key, obs);
+                }
+            });
+
+            return Array.from(speciesMap.values());
+        }
+
+        // Enhanced filtering system
+        function applyFilters() {
+            if (originalINaturalistData.length === 0) return;
+
+            const minObs = parseInt(document.getElementById('min-obs-filter').value);
+            const qualityFilter = document.getElementById('quality-filter').value;
+            const taxaFilter = document.getElementById('taxa-filter').value;
+            
+            filteredData = originalINaturalistData.filter(species => {
+                // Observation count filter
+                if (species.count < minObs) return false;
+                
+                // Quality filter
+                if (qualityFilter === 'research' && species.quality_grade !== 'research') return false;
+                if (qualityFilter === 'needs_id' && !['research', 'needs_id'].includes(species.quality_grade)) return false;
+                
+                // Taxa filter
+                if (taxaFilter !== 'all') {
+                    const kingdom = species.kingdom || 'Unknown';
+                    if (taxaFilter === 'other' && ['Plantae', 'Animalia', 'Fungi'].includes(kingdom)) return false;
+                    if (taxaFilter !== 'other' && kingdom !== taxaFilter) return false;
+                }
+                
+                return true;
+            });
+            
+            iNaturalistData = filteredData;
+            console.log(`Applied filters: ${iNaturalistData.length} species remaining`);
+            
+            // Update display values
+            document.getElementById('obs-value').textContent = minObs;
+            
+            if (document.getElementById('species').checked) {
+                updateSpeciesDisplay();
+            }
+            updateStats();
+        }
+
+        // Load iNaturalist GeoJSON data with enhanced error handling
+        async function loadINaturalistData() {
+            updateDataStatus('loading', 'Loading iNaturalist observations...');
+            showLoading(true);
+            
+            try {
+                console.log('Attempting to load: data/iNat.geojson');
+                const response = await fetch('data/iNat.geojson');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('iNaturalist GeoJSON loaded:', data);
+
+                if (!data.features || !Array.isArray(data.features)) {
+                    throw new Error('Invalid GeoJSON format - no features array found');
+                }
+
+                // Process the iNaturalist observations with enhanced grouping
+                const speciesMap = new Map();
+
+                data.features.forEach((feature, index) => {
+                    try {
+                        const props = feature.properties;
+                        const geometry = feature.geometry;
+                        
+                        if (!geometry || geometry.type !== 'Point') {
+                            console.warn(`Feature ${index} has invalid geometry`);
+                            return;
+                        }
+
+                        const [lng, lat] = geometry.coordinates;
+                        
+                        if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+                            console.warn(`Feature ${index} has invalid coordinates`);
+                            return;
+                        }
+
+                        // Extract species information with comprehensive property mapping
+                        const speciesInfo = {
+                            id: props.id || props.ID || props.observation_id || index,
+                            taxon_id: props['Taxon_Id'] || props.taxon_id || props.species_id,
+                            name: props['Name'] || props.common_name || props.species_name || 'Unknown Species',
+                            scientific: props['Taxon_name'] || props.scientific_name || props.taxon_name || 'Unknown',
+                            rank: props['Rank'] || props.rank || '',
+                            kingdom: props['Kingdom'] || props.kingdom || 'Unknown',
+                            lat: lat,
+                            lng: lng,
+                            quality_grade: props['Quality'] || props.quality_grade || props.grade || 'casual',
+                            observed_on: props['Date'] || props.observed_on || props.observation_date || props.date,
+                            observer_login: props['Observator_login'] || props.observer_login || props.user_login,
+                            observer_name: props['Observator_name'] || props.observer_name || props.user_name,
+                            description: props['Description'] || props.description || '',
+                            geoprivacy: props['Geoprivacy'] || props.geoprivacy || '',
+                            precision: props['Precision'] || props.precision || '',
+                            uri: props['Observation_url'] || props.uri || props.url || `https://www.inaturalist.org/observations/${props.id || ''}`,
+                            taxon_url: props['Taxon_url'] || props.taxon_url || '',
+                            images: [
+                                props['Picture_1'] || props.picture_1 || props.image_1,
+                                props['Picture_2'] || props.picture_2 || props.image_2,
+                                props['Picture_3'] || props.picture_3 || props.image_3
+                            ].filter(Boolean),
+                            place_name: props.place_guess || props.location || props.place,
+                            originalProps: props
+                        };
+
+                        // Create a unique key for grouping nearby observations of same species
+                        const locationKey = `${speciesInfo.taxon_id}-${lat.toFixed(3)}-${lng.toFixed(3)}`;
+                        
+                        if (speciesMap.has(locationKey)) {
+                            const existing = speciesMap.get(locationKey);
+                            existing.count++;
+                            existing.observations.push(feature);
+                            // Keep the most recent observation date
+                            if (speciesInfo.observed_on && (!existing.observed_on || speciesInfo.observed_on > existing.observed_on)) {
+                                existing.observed_on = speciesInfo.observed_on;
+                            }
+                        } else {
+                            speciesMap.set(locationKey, {
+                                ...speciesInfo,
+                                count: 1,
+                                observations: [feature]
+                            });
+                        }
+                        
+                        if (index < 3) {
+                            console.log(`Sample iNaturalist feature ${index}:`, {
+                                name: speciesInfo.name,
+                                scientific: speciesInfo.scientific,
+                                kingdom: speciesInfo.kingdom,
+                                quality: speciesInfo.quality_grade,
+                                coords: [lat, lng]
+                            });
+                        }
+                        
+                    } catch (featureError) {
+                        console.warn(`Error processing feature ${index}:`, featureError);
+                    }
+                });
+
+                // Convert to array and store both original and filtered data
+                originalINaturalistData = Array.from(speciesMap.values());
+                iNaturalistData = [...originalINaturalistData];
+                
+                const message = `Loaded ${iNaturalistData.length} unique species locations from ${data.features.length} observations`;
+                updateDataStatus('success', message);
+                showSuccess(message);
+                
+                document.getElementById('stat-updated').textContent = new Date().toLocaleTimeString();
+                
+                return iNaturalistData;
+
+            } catch (error) {
+                console.error('Error loading iNaturalist GeoJSON:', error);
+                
+                // Create mock data for demonstration if file doesn't exist
+                if (error.message.includes('404') || error.message.includes('Failed to fetch')) {
+                    console.log('Creating mock iNaturalist data for demonstration...');
+                    originalINaturalistData = createMockINaturalistData();
+                    iNaturalistData = [...originalINaturalistData];
+                    
+                    const mockMessage = `Using demo data: ${iNaturalistData.length} mock species observations`;
+                    updateDataStatus('success', mockMessage);
+                    showSuccess('iNat.geojson not found - using demo data for visualization');
+                    
+                    document.getElementById('stat-updated').textContent = new Date().toLocaleTimeString();
+                    return iNaturalistData;
+                }
+                
+                const errorMsg = `Failed to load iNat.geojson: ${error.message}`;
+                updateDataStatus('error', errorMsg);
+                showError(errorMsg);
+                return [];
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load GeoJSON data (training/validation datasets)
+        async function loadGeoJSONData() {
+            showLoading(true);
+            let loadedDatasets = [];
+            
+            try {
+                const dataFiles = [
+                    { file: 'data/training_features.geojson', type: 'training', label: 'Training Features' },
+                    { file: 'data/validation_features.geojson', type: 'validation', label: 'Validation Features' },
+                    { file: 'data/connectivity_results.geojson', type: 'connectivity', label: 'Connectivity Data' }
+                ];
+
+                for (const dataFile of dataFiles) {
+                    try {
+                        console.log(`Attempting to load: ${dataFile.file}`);
+                        const response = await fetch(dataFile.file);
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log(`Successfully loaded ${dataFile.label}: ${data.features.length} features`);
+                            loadedDatasets.push(dataFile.type);
+                            
+                            if (dataFile.type === 'training' || dataFile.type === 'validation') {
+                                processLocationFeatures(data, dataFile.type);
+                            } else if (dataFile.type === 'connectivity') {
+                                processConnectivityFeatures(data);
+                            }
+                        } else {
+                            console.warn(`Failed to load ${dataFile.label}: HTTP ${response.status}`);
+                            showError(`${dataFile.label} file returned HTTP ${response.status}. Using example data instead.`);
+                        }
+                    } catch (fetchError) {
+                        console.warn(`Error loading ${dataFile.label}:`, fetchError.message);
+                        showError(`Cannot access ${dataFile.label}. Check if file exists in /data folder.`);
+                    }
+                }
+
+                prairieData.push(...exampleData);
+                console.log(`Total prairie sites loaded: ${prairieData.length}`);
+                updateDataSourceControls(loadedDatasets);
+                
+            } catch (error) {
+                console.error('Critical error loading GeoJSON data:', error);
+                showError('Critical error loading research data files. Using example data only.');
+                prairieData = [...exampleData];
+            }
+            
+            showLoading(false);
+        }
+
+        // Process location features (training/validation sites)
+        function processLocationFeatures(data, datasetType) {
+            data.features.forEach((feature, index) => {
+                const props = feature.properties;
+                let lat, lng;
+                let geometryForDisplay = feature.geometry;
+                let isPolygon = false;
+                
+                try {
+                    if (feature.geometry.type === 'Point') {
+                        lng = feature.geometry.coordinates[0];
+                        lat = feature.geometry.coordinates[1];
+                    } else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+                        isPolygon = true;
+                        const coords = feature.geometry.type === 'Polygon' ? 
+                            feature.geometry.coordinates[0] : 
+                            feature.geometry.coordinates[0][0];
+                        lng = coords.reduce((sum, coord) => sum + coord[0], 0) / coords.length;
+                        lat = coords.reduce((sum, coord) => sum + coord[1], 0) / coords.length;
+                    } else {
+                        console.warn(`Unsupported geometry type: ${feature.geometry.type}`);
+                        return;
+                    }
+
+                    if (lat < 42 || lat > 45 || lng < -93 || lng > -88) {
+                        console.warn(`Coordinates outside expected range: ${lat}, ${lng}`);
+                    }
+                } catch (coordError) {
+                    console.error(`Error extracting coordinates for feature ${index}:`, coordError);
+                    return;
+                }
+                
+                const siteData = {
+                    name: props.site_name || props.name || props.Site_Name || props.location || `${datasetType.charAt(0).toUpperCase() + datasetType.slice(1)} Site ${index + 1}`,
+                    lat: lat,
+                    lng: lng,
+                    area: parseFloat(props.area_ha || props.area || props.Area_ha || props.AREA || 0),
+                    connectivity: parseFloat(props.connectivity_score || props.connectivity || props.Connectivity || Math.random() * 100),
+                    species: parseInt(props.species_count || props.richness || props.species_richness || props.Species_Count || Math.floor(Math.random() * 50)),
+                    quality: parseFloat(props.habitat_quality || props.quality || props.Quality || props.habitat_score || Math.random() * 100),
+                    description: props.description || props.Description || props.notes || `${datasetType.charAt(0).toUpperCase() + datasetType.slice(1)} dataset location for ML model`,
+                    dataset: datasetType,
+                    feature_id: props.id || props.ID || props.FID || index,
+                    geometry: geometryForDisplay,
+                    isPolygon: isPolygon,
+                    threat_level: props.threat_level || ['low', 'medium', 'high'][Math.floor(Math.random() * 3)],
+                    management_priority: props.management_priority || ['low', 'medium', 'high'][Math.floor(Math.random() * 3)],
+                    originalProps: props
+                };
+                
+                if (index < 3) {
+                    console.log(`Sample ${datasetType} feature:`, {
+                        name: siteData.name,
+                        coords: [lat, lng],
+                        area: siteData.area,
+                        isPolygon: isPolygon
+                    });
+                }
+                
+                prairieData.push(siteData);
+                allFeatures.push({...feature, displayData: siteData});
+            });
+        }
+
+        // Process connectivity features (lines/corridors)
+        function processConnectivityFeatures(data) {
+            console.log(`Processing ${data.features.length} connectivity features`);
+            data.features.forEach((feature, index) => {
+                if (feature.geometry.type === 'LineString' || feature.geometry.type === 'MultiLineString') {
+                    const props = feature.properties;
+                    const corridor = {
+                        name: props.name || props.corridor_name || `Corridor ${index + 1}`,
+                        coordinates: feature.geometry.coordinates.map(coord => [coord[1], coord[0]]), // Leaflet uses [lat, lng]
+                        quality: props.quality || props.connectivity_quality || ['high', 'medium', 'low'][Math.floor(Math.random() * 3)],
+                        length: parseFloat(props.length_km || props.length || Math.random() * 10),
+                        threats: props.threats ? props.threats.split(',') : ['development', 'fragmentation'],
+                        originalProps: props
+                    };
+                    exampleCorridors.push(corridor);
+                    console.log(`Processed corridor: ${corridor.name}`);
+                }
+            });
+        }
+
+        // Update data source controls based on what was successfully loaded
+        function updateDataSourceControls(loadedDatasets) {
+            const controls = {
+                'show-training': loadedDatasets.includes('training'),
+                'show-validation': loadedDatasets.includes('validation')
+            };
+
+            Object.entries(controls).forEach(([controlId, hasData]) => {
+                const control = document.getElementById(controlId);
+                const label = control.nextElementSibling;
+                
+                if (hasData) {
+                    control.disabled = false;
+                    label.style.opacity = '1';
+                    label.title = 'Data loaded successfully';
+                } else {
+                    control.disabled = true;
+                    control.checked = false;
+                    label.style.opacity = '0.5';
+                    label.title = 'Data file not found or failed to load';
+                }
+            });
+        }
+
+        // Refresh/filter iNaturalist data based on current settings
+        function refreshINaturalistData() {
+            if (originalINaturalistData.length === 0) {
+                showError('No iNaturalist data loaded. Check that data/iNat.geojson exists.');
+                return;
+            }
+
+            applyFilters();
+            showSuccess(`Filtered to ${iNaturalistData.length} species meeting criteria`);
+        }
+
+        // Enhanced display functions with proper symbolization
+        function updatePrairieDisplay() {
+            const connectivityMin = parseFloat(document.getElementById('connectivity-filter').value);
+            const speciesMin = parseInt(document.getElementById('species-filter').value);
+            const showTraining = document.getElementById('show-training').checked;
+            const showValidation = document.getElementById('show-validation').checked;
+            const showExample = document.getElementById('show-example').checked;
+            
+            // Update display values
+            document.getElementById('connectivity-value').textContent = connectivityMin;
+            document.getElementById('species-value').textContent = speciesMin;
+            
+            prairieLayer.clearLayers();
+            
+            let visibleCount = 0;
+            
+            prairieData.forEach(prairie => {
+                // Filter by dataset type
+                if ((prairie.dataset === 'training' && !showTraining) ||
+                    (prairie.dataset === 'validation' && !showValidation) ||
+                    (prairie.dataset === 'example' && !showExample)) {
+                    return;
+                }
+                
+                // Filter by metrics
+                if (prairie.connectivity >= connectivityMin && prairie.species >= speciesMin) {
+                    let marker;
+                    
+                    if (prairie.isPolygon && prairie.geometry) {
+                        // Render as polygon for training/validation features
+                        const coords = prairie.geometry.type === 'Polygon' ? 
+                            prairie.geometry.coordinates[0].map(coord => [coord[1], coord[0]]) :
+                            prairie.geometry.coordinates[0][0].map(coord => [coord[1], coord[0]]);
+                            
+                        marker = L.polygon(coords, {
+                            color: getDatasetColor(prairie.dataset),
+                            weight: 2,
+                            opacity: 0.8,
+                            fillColor: prairie.dataset === 'example' ? getQualityColor(prairie.quality) : getDatasetColor(prairie.dataset),
+                            fillOpacity: 0.6
+                        });
+                    } else {
+                        // Render as circle marker for point features or fallback
+                        const radius = Math.sqrt(prairie.area || 10) / 2 + 5;
+                        marker = L.circleMarker([prairie.lat, prairie.lng], {
+                            radius: radius,
+                            fillColor: prairie.dataset === 'example' ? getQualityColor(prairie.quality) : getDatasetColor(prairie.dataset),
+                            color: getDatasetColor(prairie.dataset),
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                    }
+
+                    const popupContent = `
+                        <div class="popup-content">
+                            <h3>${prairie.name}</h3>
+                            <div class="popup-metric">
+                                <span>Dataset:</span>
+                                <strong>${prairie.dataset.charAt(0).toUpperCase() + prairie.dataset.slice(1)}</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Geometry:</span>
+                                <strong>${prairie.isPolygon ? 'Polygon' : 'Point'}</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Area:</span>
+                                <strong>${(prairie.area || 0).toFixed(1)} hectares</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Connectivity:</span>
+                                <strong>${prairie.connectivity.toFixed(1)}%</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Species Count:</span>
+                                <strong>${prairie.species}</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Habitat Quality:</span>
+                                <strong>${prairie.quality.toFixed(1)}%</strong>
+                            </div>
+                            ${prairie.threat_level ? `
+                            <div class="popup-metric">
+                                <span>Threat Level:</span>
+                                <strong style="color: ${prairie.threat_level === 'high' ? '#dc3545' : prairie.threat_level === 'medium' ? '#ffc107' : '#28a745'}">${prairie.threat_level.charAt(0).toUpperCase() + prairie.threat_level.slice(1)}</strong>
+                            </div>` : ''}
+                            ${prairie.management_priority ? `
+                            <div class="popup-metric">
+                                <span>Management Priority:</span>
+                                <strong>${prairie.management_priority.charAt(0).toUpperCase() + prairie.management_priority.slice(1)}</strong>
+                            </div>` : ''}
+                            <p style="margin-top: 10px; font-style: italic; color: #666;">${prairie.description}</p>
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupContent, { maxWidth: 400 });
+                    marker.addTo(prairieLayer);
+                    visibleCount++;
+                }
+            });
+            
+            console.log(`Displayed ${visibleCount} prairie sites`);
+            updateStats();
+        }
+
+        // Update species observations display with enhanced filtering
+        function updateSpeciesDisplay() {
+            const showINaturalist = document.getElementById('show-inaturalist').checked;
+            speciesLayer.clearLayers();
+            
+            if (showINaturalist && iNaturalistData.length > 0) {
+                iNaturalistData.forEach(species => {
+                    const marker = L.circleMarker([species.lat, species.lng], {
+                        radius: getObservationRadius(species.count),
+                        fillColor: getSpeciesColor(species),
+                        color: '#4a6b00',
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    });
+                    
+                    const popupContent = createEnhancedPopup(species);
+
+                    marker.bindPopup(popupContent, {
+                        maxWidth: 400,
+                        className: 'enhanced-inat-popup'
+                    });
+                    marker.addTo(speciesLayer);
+                });
+                
+                console.log(`Displayed ${iNaturalistData.length} species observations`);
+            }
+        }
+
+        // Update connectivity corridors display
+        function updateConnectivityDisplay() {
+            connectivityLayer.clearLayers();
+            
+            exampleCorridors.forEach(corridor => {
+                const color = corridor.quality === 'high' ? '#28a745' : 
+                             corridor.quality === 'medium' ? '#ffc107' : '#dc3545';
+                
+                const polyline = L.polyline(corridor.coordinates, {
+                    color: color,
+                    weight: 4,
+                    opacity: 0.8
+                });
+                
+                const
