@@ -303,7 +303,7 @@ export function updatePriorityDisplay() {
                     className: 'priority-area'
                 });
                 
-                const popupContent = generatePrairieAreaPopupContent ? 
+                const popupContent = generatePriorityAreaPopupContent ? 
                     generatePriorityAreaPopupContent(area) : 
                     `<strong>Priority Area</strong><br>Priority Level: ${area.priority}`;
                     
