@@ -16,22 +16,22 @@
     <div class="container">
         <div class="sidebar">
             <div class="control-group data-toggle">
-                <h3>Data Source</h3>
+                <h3>Data Sources</h3>
                 <div class="layer-control">
                     <input type="checkbox" id="show-example" checked>
                     <label for="show-example">Example/Demo Data</label>
                 </div>
                 <div class="layer-control">
-                    <input type="checkbox" id="show-training">
-                    <label for="show-training">ML Training Sites</label>
+                    <input type="checkbox" id="show-prairies" checked>
+                    <label for="show-prairies">Prairie Remnant Sites</label>
                 </div>
                 <div class="layer-control">
-                    <input type="checkbox" id="show-validation">
-                    <label for="show-validation">ML Validation Sites</label>
+                    <input type="checkbox" id="show-connectivity">
+                    <label for="show-connectivity">Connectivity Corridors</label>
                 </div>
                 <div class="layer-control">
                     <input type="checkbox" id="show-inaturalist" checked>
-                    <label for="show-inaturalist">iNaturalist Data</label>
+                    <label for="show-inaturalist">iNaturalist Observations</label>
                 </div>
             </div>
 
@@ -94,6 +94,12 @@
                 <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #666;">
                     <span>0</span><span>50+</span>
                 </div>
+
+                <label style="margin-top: 15px; display: block;">Prairie Area (hectares):</label>
+                <input type="range" id="area-filter" min="0" max="100" value="0" style="width: 100%; margin: 10px 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #666;">
+                    <span>0 ha</span><span>100+ ha</span>
+                </div>
             </div>
 
             <div class="legend">
@@ -103,12 +109,16 @@
                     <span>Example/Demo Sites</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color training-marker"></div>
-                    <span>ML Training Data</span>
+                    <div class="legend-color prairie-marker"></div>
+                    <span>Prairie Remnant Sites</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color validation-marker"></div>
-                    <span>ML Validation Data</span>
+                    <div class="legend-color connectivity-marker"></div>
+                    <span>Connectivity Corridors</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color inaturalist-marker"></div>
+                    <span>iNaturalist Observations</span>
                 </div>
                 
                 <h4 style="margin-top: 15px;">Prairie Quality</h4>
@@ -128,6 +138,20 @@
                     <div class="legend-color habitat-poor"></div>
                     <span>Poor (<40%)</span>
                 </div>
+
+                <h4 style="margin-top: 15px;">Connectivity Strength</h4>
+                <div class="legend-item">
+                    <div class="legend-color connectivity-high"></div>
+                    <span>High Connectivity</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color connectivity-medium"></div>
+                    <span>Medium Connectivity</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color connectivity-low"></div>
+                    <span>Low Connectivity</span>
+                </div>
             </div>
 
             <div class="stats-panel">
@@ -141,6 +165,10 @@
                     <span class="stat-value" id="stat-area">Loading...</span>
                 </div>
                 <div class="stat-item">
+                    <span>Connectivity Features:</span>
+                    <span class="stat-value" id="stat-connectivity">Loading...</span>
+                </div>
+                <div class="stat-item">
                     <span>Species Observed:</span>
                     <span class="stat-value" id="stat-species">Loading...</span>
                 </div>
@@ -151,6 +179,13 @@
             </div>
 
             <div class="legend">
+                <h4>About This Project</h4>
+                <p style="margin-bottom: 10px; font-size: 0.9em; line-height: 1.4;">
+                    This interactive map displays remnant hill prairie sites and their ecological connectivity 
+                    in the Driftless Region. Prairie connectivity data helps identify conservation priorities 
+                    and restoration opportunities.
+                </p>
+                
                 <h4>About iNaturalist</h4>
                 <p style="margin-bottom: 10px; font-size: 0.9em; line-height: 1.4;">
                     <a href="https://www.inaturalist.org/" target="_blank" style="color: #74ac00; text-decoration: none;">iNaturalist</a> 
@@ -171,8 +206,8 @@
 
         <div class="map-container">
             <div id="loading" class="loading-indicator" style="display: none;">
-                <h4>Loading prairie data...</h4>
-                <p>Fetching training features, validation data, and iNaturalist observations...</p>
+                <h4>Loading prairie research data...</h4>
+                <p>Fetching prairie remnant sites, connectivity corridors, and iNaturalist observations...</p>
             </div>
             <div id="map"></div>
         </div>
