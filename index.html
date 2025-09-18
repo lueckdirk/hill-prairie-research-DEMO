@@ -1848,4 +1848,234 @@
                     opacity: 0.8
                 });
                 
-                const
+                polyline.bindPopup(`
+                    <div class="popup-content">
+                        <h3>${corridor.name}</h3>
+                        <div class="popup-metric">
+                            <span>Quality:</span>
+                            <strong>${corridor.quality.charAt(0).toUpperCase() + corridor.quality.slice(1)}</strong>
+                        </div>
+                    </div>
+                `);
+                
+                polyline.addTo(connectivityLayer);
+            });
+        }
+
+        // Update species observations display
+        function updateSpeciesDisplay() {
+            const showINaturalist = document.getElementById('show-inaturalist').checked;
+            speciesLayer.clearLayers();
+            
+            if (showINaturalist) {
+                iNaturalistData.forEach(observation => {
+                    const marker = L.circleMarker([observation.lat, observation.lng], {
+                        radius: 4,
+                        fillColor: '#74ac00',
+                        color: '#4a6b00',
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    });
+                    
+                    marker.bindPopup(`
+                        <div class="popup-content">
+                            <h3>${observation.name}</h3>
+                            <div class="popup-metric">
+                                <span>Scientific Name:</span>
+                                <strong><em>${observation.scientific}</em></strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Observations:</span>
+                                <strong>${observation.count}</strong>
+                            </div>
+                            <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                                Data contributed by citizen scientists via iNaturalist
+                            </p>
+                        </div>
+                    `);
+                    
+                    marker.addTo(speciesLayer);
+                });
+            }
+        }
+
+        // Update habitat suitability display
+        function updateHabitatDisplay() {
+            habitatLayer.clearLayers();
+            
+            // Create habitat suitability grid overlay (example)
+            const bounds = [[43.0, -91.5], [43.5, -89.5]];
+            const imageOverlay = L.imageOverlay('data:image/svg+xml;base64,' + btoa(`
+                <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="habitat" patternUnits="userSpaceOnUse" width="20" height="20">
+                            <rect width="20" height="20" fill="#28a745" opacity="0.3"/>
+                            <circle cx="10" cy="10" r="5" fill="#155724" opacity="0.5"/>
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#habitat)"/>
+                </svg>
+            `), bounds, {
+                opacity: 0.4
+            });
+            
+            imageOverlay.addTo(habitatLayer);
+        }
+
+        // Update conservation priority areas
+        function updatePriorityDisplay() {
+            priorityLayer.clearLayers();
+            
+            // Example priority polygons
+            const priorityAreas = [
+                {
+                    name: "High Priority Conservation Area",
+                    coordinates: [[43.4, -90.7], [43.45, -90.65], [43.42, -90.6], [43.37, -90.65]],
+                    priority: "high"
+                },
+                {
+                    name: "Medium Priority Conservation Area", 
+                    coordinates: [[43.2, -90.15], [43.25, -90.1], [43.22, -90.05], [43.17, -90.1]],
+                    priority: "medium"
+                }
+            ];
+            
+            priorityAreas.forEach(area => {
+                const color = area.priority === 'high' ? '#dc3545' : 
+                             area.priority === 'medium' ? '#ffc107' : '#28a745';
+                
+                const polygon = L.polygon(area.coordinates, {
+                    color: color,
+                    weight: 2,
+                    opacity: 0.8,
+                    fillColor: color,
+                    fillOpacity: 0.2
+                });
+                
+                polygon.bindPopup(`
+                    <div class="popup-content">
+                        <h3>${area.name}</h3>
+                        <div class="popup-metric">
+                            <span>Priority Level:</span>
+                            <strong>${area.priority.charAt(0).toUpperCase() + area.priority.slice(1)}</strong>
+                        </div>
+                    </div>
+                `);
+                
+                polygon.addTo(priorityLayer);
+            });
+        }
+
+        // Update statistics panel
+        function updateStats() {
+            const visiblePrairies = prairieLayer.getLayers().length;
+            const totalArea = prairieData.reduce((sum, prairie) => sum + (prairie.area || 0), 0);
+            const uniqueSpecies = new Set(iNaturalistData.map(obs => obs.scientific)).size;
+            const totalObservations = iNaturalistData.reduce((sum, obs) => sum + obs.count, 0);
+            
+            document.getElementById('stat-prairies').textContent = visiblePrairies;
+            document.getElementById('stat-area').textContent = totalArea.toFixed(1) + ' ha';
+            document.getElementById('stat-species').textContent = uniqueSpecies;
+            document.getElementById('stat-inaturalist').textContent = totalObservations;
+        }
+
+        // Event listeners for controls
+        function setupEventListeners() {
+            // Layer toggles
+            document.getElementById('prairies').addEventListener('change', function() {
+                if (this.checked) {
+                    map.addLayer(prairieLayer);
+                    updatePrairieDisplay();
+                } else {
+                    map.removeLayer(prairieLayer);
+                }
+            });
+
+            document.getElementById('connectivity').addEventListener('change', function() {
+                if (this.checked) {
+                    map.addLayer(connectivityLayer);
+                    updateConnectivityDisplay();
+                } else {
+                    map.removeLayer(connectivityLayer);
+                }
+            });
+
+            document.getElementById('species').addEventListener('change', function() {
+                if (this.checked) {
+                    map.addLayer(speciesLayer);
+                    updateSpeciesDisplay();
+                } else {
+                    map.removeLayer(speciesLayer);
+                }
+            });
+
+            document.getElementById('habitat').addEventListener('change', function() {
+                if (this.checked) {
+                    map.addLayer(habitatLayer);
+                    updateHabitatDisplay();
+                } else {
+                    map.removeLayer(habitatLayer);
+                }
+            });
+
+            document.getElementById('priority').addEventListener('change', function() {
+                if (this.checked) {
+                    map.addLayer(priorityLayer);
+                    updatePriorityDisplay();
+                } else {
+                    map.removeLayer(priorityLayer);
+                }
+            });
+
+            // Data source toggles
+            ['show-example', 'show-training', 'show-validation', 'show-inaturalist'].forEach(id => {
+                document.getElementById(id).addEventListener('change', function() {
+                    if (document.getElementById('prairies').checked) {
+                        updatePrairieDisplay();
+                    }
+                    if (document.getElementById('species').checked) {
+                        updateSpeciesDisplay();
+                    }
+                });
+            });
+
+            // Filter controls
+            document.getElementById('connectivity-filter').addEventListener('input', function() {
+                if (document.getElementById('prairies').checked) {
+                    updatePrairieDisplay();
+                }
+            });
+
+            document.getElementById('species-filter').addEventListener('input', function() {
+                if (document.getElementById('prairies').checked) {
+                    updatePrairieDisplay();
+                }
+            });
+        }
+
+        // Initialize the application
+        async function initialize() {
+            console.log('Hill Prairie Research Application - Demo Version');
+            
+            // Load data
+            await loadGeoJSONData();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Initialize default layers
+            map.addLayer(prairieLayer);
+            updatePrairieDisplay();
+            
+            console.log('Application initialized successfully');
+        }
+
+        // Start the application
+        initialize().catch(error => {
+            console.error('Failed to initialize application:', error);
+            showError('Failed to initialize application. Please refresh the page.');
+        });
+    </script>
+</body>
+</html>
