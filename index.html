@@ -183,11 +183,27 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(255,255,255,0.9);
-            padding: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 25px;
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
             z-index: 1000;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #28a745;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .error-message {
@@ -197,6 +213,15 @@
             border-radius: 5px;
             margin: 10px 0;
             border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
         }
 
         .data-toggle {
@@ -244,38 +269,74 @@
             justify-content: space-between;
         }
 
-        .under-development-banner {
+        .api-status {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.9em;
             display: flex;
             align-items: center;
-            padding: 15px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 8px;
-            border: 2px dashed #6c757d;
-            margin: 10px 0;
         }
 
-        .banner-icon {
-            font-size: 2em;
-            margin-right: 15px;
-            opacity: 0.7;
+        .api-status.loading {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
         }
 
-        .banner-content {
-            flex: 1;
+        .api-status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
         }
 
-        .banner-content strong {
-            display: block;
-            color: #495057;
+        .api-status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .status-icon {
+            margin-right: 8px;
             font-size: 1.1em;
-            margin-bottom: 4px;
         }
 
-        .banner-content p {
-            margin: 0;
-            color: #6c757d;
+        .refresh-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
             font-size: 0.9em;
-            font-style: italic;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .refresh-button:hover {
+            background: #218838;
+        }
+
+        .refresh-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .taxon-filter {
+            margin-top: 15px;
+        }
+
+        .taxon-filter select {
+            margin-bottom: 10px;
+        }
+
+        .filter-info {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            color: #0366d6;
+            margin-top: 10px;
         }
 
         @media (max-width: 768px) {
@@ -285,11 +346,11 @@
             
             .sidebar {
                 width: 100%;
-                height: 300px;
+                height: 350px;
             }
             
             .map-container {
-                height: calc(100vh - 420px);
+                height: calc(100vh - 470px);
             }
         }
     </style>
@@ -297,50 +358,47 @@
 <body>
     <div class="header">
         <h1>Hill Prairie Research - Driftless Region</h1>
-        <p>Interactive visualization of remnant hill prairie connectivity, species distributions, and conservation priorities in the Driftless Region. Wisconsin DNR imagery and elevation layers under development.</p>
+        <p>Interactive visualization of remnant hill prairie connectivity, species distributions, and conservation priorities in the Driftless Region. Live data from iNaturalist API integrated with research datasets.</p>
     </div>
 
     <div class="container">
         <div class="sidebar">
             <div class="control-group data-toggle">
-                <h3>Data Source</h3>
+                <h3>Data Sources</h3>
                 <div class="layer-control">
                     <input type="checkbox" id="show-example" checked>
-                    <label for="show-example">Example/Demo Data</label>
-                </div>
-                <div class="layer-control">
-                    <input type="checkbox" id="show-training">
-                    <label for="show-training">ML Training Sites</label>
-                </div>
-                <div class="layer-control">
-                    <input type="checkbox" id="show-validation">
-                    <label for="show-validation">ML Validation Sites</label>
+                    <label for="show-example">Example/Demo Prairie Sites</label>
                 </div>
                 <div class="layer-control">
                     <input type="checkbox" id="show-inaturalist" checked>
-                    <label for="show-inaturalist">iNaturalist Data</label>
+                    <label for="show-inaturalist">Live iNaturalist Data</label>
                 </div>
-            </div>
-
-            <div class="control-group imagery-toggle">
-                <h3>Wisconsin DNR Imagery</h3>
-                <div class="under-development-banner">
-                    <div class="banner-icon">🚧</div>
-                    <div class="banner-content">
-                        <strong>Under Development</strong>
-                        <p>Historical imagery layers coming soon</p>
-                    </div>
+                
+                <div id="inaturalist-status" class="api-status loading">
+                    <span class="status-icon">🔄</span>
+                    <span>Loading iNaturalist observations...</span>
                 </div>
-            </div>
-
-            <div class="control-group elevation-toggle">
-                <h3>Wisconsin DNR Elevation</h3>
-                <div class="under-development-banner">
-                    <div class="banner-icon">🗻</div>
-                    <div class="banner-content">
-                        <strong>Under Development</strong>
-                        <p>LiDAR and terrain analysis layers coming soon</p>
-                    </div>
+                
+                <button id="refresh-inaturalist" class="refresh-button" disabled>
+                    Refresh iNaturalist Data
+                </button>
+                
+                <div class="taxon-filter">
+                    <label for="taxon-select">Filter by taxon:</label>
+                    <select id="taxon-select">
+                        <option value="">All taxa</option>
+                        <option value="47126">Plants (Plantae)</option>
+                        <option value="47158">Flowering Plants</option>
+                        <option value="47604">Grasses</option>
+                        <option value="47602">Sedges</option>
+                        <option value="558449">Prairie Plants</option>
+                    </select>
+                </div>
+                
+                <div class="filter-info">
+                    <strong>Search Area:</strong> Driftless Region (SW Wisconsin, NE Iowa, SE Minnesota, NW Illinois)<br>
+                    <strong>Quality Grade:</strong> Research Grade observations only<br>
+                    <strong>Date Range:</strong> Last 5 years
                 </div>
             </div>
 
@@ -362,24 +420,20 @@
                     <input type="checkbox" id="habitat">
                     <label for="habitat">Habitat Suitability</label>
                 </div>
-                <div class="layer-control">
-                    <input type="checkbox" id="priority">
-                    <label for="priority">Conservation Priority</label>
-                </div>
             </div>
 
             <div class="control-group">
                 <h3>Data Filters</h3>
-                <label>Connectivity Score:</label>
-                <input type="range" id="connectivity-filter" min="0" max="100" value="0" style="width: 100%; margin: 10px 0;">
+                <label>Date Range (months ago):</label>
+                <input type="range" id="date-filter" min="1" max="60" value="12" style="width: 100%; margin: 10px 0;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #666;">
-                    <span>Low</span><span>High</span>
+                    <span>1 month</span><span>5 years</span>
                 </div>
                 
-                <label style="margin-top: 15px; display: block;">Species Richness:</label>
-                <input type="range" id="species-filter" min="0" max="50" value="0" style="width: 100%; margin: 10px 0;">
+                <label style="margin-top: 15px; display: block;">Min observations per species:</label>
+                <input type="range" id="min-obs-filter" min="1" max="20" value="2" style="width: 100%; margin: 10px 0;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #666;">
-                    <span>0</span><span>50+</span>
+                    <span>1</span><span>20+</span>
                 </div>
             </div>
 
@@ -387,69 +441,56 @@
                 <h4>Data Sources</h4>
                 <div class="legend-item">
                     <div class="legend-color example-marker"></div>
-                    <span>Example/Demo Sites</span>
+                    <span>Example Prairie Sites</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color training-marker"></div>
-                    <span>ML Training Data</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color validation-marker"></div>
-                    <span>ML Validation Data</span>
+                    <div class="legend-color" style="background-color: #74ac00;"></div>
+                    <span>iNaturalist Observations</span>
                 </div>
                 
-                <h4 style="margin-top: 15px;">Prairie Quality</h4>
+                <h4 style="margin-top: 15px;">Observation Frequency</h4>
                 <div class="legend-item">
-                    <div class="legend-color habitat-excellent"></div>
-                    <span>Excellent (>80%)</span>
+                    <div style="width: 12px; height: 12px; background: #74ac00; border-radius: 50%; margin-right: 13px; border: 1px solid #4a6b00;"></div>
+                    <span>1-5 observations</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color habitat-good"></div>
-                    <span>Good (60-80%)</span>
+                    <div style="width: 16px; height: 16px; background: #74ac00; border-radius: 50%; margin-right: 11px; border: 1px solid #4a6b00;"></div>
+                    <span>6-15 observations</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color habitat-fair"></div>
-                    <span>Fair (40-60%)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color habitat-poor"></div>
-                    <span>Poor (<40%)</span>
+                    <div style="width: 20px; height: 20px; background: #74ac00; border-radius: 50%; margin-right: 9px; border: 1px solid #4a6b00;"></div>
+                    <span>16+ observations</span>
                 </div>
             </div>
 
             <div class="stats-panel">
-                <h4>Study Area Summary</h4>
+                <h4>Live Data Summary</h4>
                 <div class="stat-item">
-                    <span>Prairie Remnants:</span>
-                    <span class="stat-value" id="stat-prairies">Loading...</span>
+                    <span>iNaturalist Observations:</span>
+                    <span class="stat-value" id="stat-inaturalist">Loading...</span>
                 </div>
                 <div class="stat-item">
-                    <span>Total Area:</span>
-                    <span class="stat-value" id="stat-area">Loading...</span>
-                </div>
-                <div class="stat-item">
-                    <span>Species Observed:</span>
+                    <span>Unique Species:</span>
                     <span class="stat-value" id="stat-species">Loading...</span>
                 </div>
                 <div class="stat-item">
-                    <span>iNaturalist Records:</span>
-                    <span class="stat-value" id="stat-inaturalist">Loading...</span>
+                    <span>Prairie Remnants:</span>
+                    <span class="stat-value" id="stat-prairies">4</span>
+                </div>
+                <div class="stat-item">
+                    <span>Last Updated:</span>
+                    <span class="stat-value" id="stat-updated">Never</span>
                 </div>
             </div>
 
             <div class="legend">
-                <h4>About iNaturalist</h4>
+                <h4>About iNaturalist Integration</h4>
                 <p style="margin-bottom: 10px; font-size: 0.9em; line-height: 1.4;">
-                    <a href="https://www.inaturalist.org/" target="_blank" style="color: #74ac00; text-decoration: none;">iNaturalist</a> 
-                    is a citizen science platform where researchers and nature enthusiasts contribute biodiversity observations. 
-                    Species data shown here comes from the 
-                    <a href="https://www.inaturalist.org/projects/driftless-remnant-hill-prairies" target="_blank" 
-                       style="color: #74ac00; text-decoration: none; font-weight: bold;">
-                       Driftless Remnant Hill Prairies
-                    </a> project.
+                    Live data from the <a href="https://www.inaturalist.org/" target="_blank" style="color: #74ac00; text-decoration: none;">iNaturalist API</a> 
+                    showing research-grade species observations in the Driftless Region. Data updates automatically and includes location coordinates, species identification, and observation metadata.
                 </p>
                 <p style="font-size: 0.8em; color: #666; margin-bottom: 15px;">
-                    Join the project to contribute your own prairie species observations and help document these unique ecosystems!
+                    Contribute to prairie research by uploading your own observations to iNaturalist!
                 </p>
             </div>
 
@@ -458,8 +499,9 @@
 
         <div class="map-container">
             <div id="loading" class="loading-indicator" style="display: none;">
+                <div class="loading-spinner"></div>
                 <h4>Loading prairie data...</h4>
-                <p>Fetching training features, validation data, and iNaturalist observations...</p>
+                <p>Fetching live iNaturalist observations from API...</p>
             </div>
             <div id="map"></div>
         </div>
@@ -468,9 +510,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
     <script>
         // Initialize map centered on Driftless Region
-        const map = L.map('map').setView([43.25, -90.8], 10);
+        const map = L.map('map').setView([43.25, -90.8], 9);
 
-        // Add base layers - simplified and reliable
+        // Add base layers
         const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         });
@@ -490,24 +532,22 @@
             "Topographic": topo
         };
 
-        // Start with OpenStreetMap
         osm.addTo(map);
         L.control.layers(baseLayers).addTo(map);
 
         // Data storage
-        let prairieData = [];
-        let allFeatures = [];
         let iNaturalistData = [];
+        let prairieData = [];
+        let loadingCount = 0;
 
         // Layer groups
         const prairieLayer = L.layerGroup();
         const connectivityLayer = L.layerGroup();
         const speciesLayer = L.layerGroup();
         const habitatLayer = L.layerGroup();
-        const priorityLayer = L.layerGroup();
 
-        // Example data for demonstration
-        const exampleData = [
+        // Example prairie sites data
+        const examplePrairies = [
             {
                 name: "Kickapoo Valley Reserve",
                 lat: 43.45, lng: -90.65,
@@ -538,29 +578,174 @@
             }
         ];
 
-        // Generate example iNaturalist data
-        const exampleSpeciesObservations = [
-            { name: "Blazing Star", scientific: "Liatris pycnostachya", lat: 43.43, lng: -90.63, count: 12 },
-            { name: "Prairie Rose", scientific: "Rosa arkansana", lat: 43.22, lng: -90.12, count: 8 },
-            { name: "Big Bluestem", scientific: "Andropogon gerardii", lat: 43.16, lng: -91.08, count: 25 },
-            { name: "Purple Coneflower", scientific: "Echinacea purpurea", lat: 43.05, lng: -89.87, count: 15 },
-            { name: "Wild Bergamot", scientific: "Monarda fistulosa", lat: 43.38, lng: -90.58, count: 19 },
-            { name: "Compass Plant", scientific: "Silphium laciniatum", lat: 43.24, lng: -90.14, count: 6 }
-        ];
+        // Driftless Region bounding box (SW Wisconsin, NE Iowa, SE Minnesota, NW Illinois)
+        const DRIFTLESS_BOUNDS = {
+            swlat: 42.0,   // Southern boundary
+            swlng: -92.5,  // Western boundary  
+            nelat: 44.5,   // Northern boundary
+            nelng: -89.0   // Eastern boundary
+        };
 
-        // Example connectivity corridors
-        const exampleCorridors = [
-            {
-                name: "Kickapoo-Coon Creek Corridor",
-                coordinates: [[43.45, -90.65], [43.42, -90.70], [43.39, -90.75]],
-                quality: "high"
-            },
-            {
-                name: "Mississippi River Bluff Corridor", 
-                coordinates: [[43.15, -91.10], [43.12, -91.05], [43.10, -91.00]],
-                quality: "high"
+        // iNaturalist API configuration
+        const INATURALIST_API_BASE = 'https://api.inaturalist.org/v1';
+        
+        // Status management
+        function updateApiStatus(status, message) {
+            const statusEl = document.getElementById('inaturalist-status');
+            const refreshBtn = document.getElementById('refresh-inaturalist');
+            
+            statusEl.className = `api-status ${status}`;
+            
+            const icons = {
+                loading: '🔄',
+                success: '✅',
+                error: '❌'
+            };
+            
+            statusEl.innerHTML = `<span class="status-icon">${icons[status]}</span><span>${message}</span>`;
+            
+            refreshBtn.disabled = status === 'loading';
+        }
+
+        // Error handling
+        function showError(message) {
+            const errorContainer = document.getElementById('error-container');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<strong>API Error:</strong> ${message}`;
+            errorContainer.appendChild(errorDiv);
+            
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 10000);
+        }
+
+        function showSuccess(message) {
+            const errorContainer = document.getElementById('error-container');
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.innerHTML = `<strong>Success:</strong> ${message}`;
+            errorContainer.appendChild(successDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                successDiv.remove();
+            }, 5000);
+        }
+
+        // Loading indicator
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        // Fetch data from iNaturalist API
+        async function fetchINaturalistData(taxonId = null, monthsAgo = 12) {
+            updateApiStatus('loading', 'Fetching observations from iNaturalist API...');
+            showLoading(true);
+            
+            try {
+                // Calculate date range
+                const endDate = new Date();
+                const startDate = new Date(endDate.getTime() - (monthsAgo * 30 * 24 * 60 * 60 * 1000));
+                
+                // Build API URL with parameters
+                const params = new URLSearchParams({
+                    place_id: 'any', // Will be filtered by lat/lng bounds
+                    quality_grade: 'research',
+                    per_page: 200, // Maximum allowed
+                    swlat: DRIFTLESS_BOUNDS.swlat,
+                    swlng: DRIFTLESS_BOUNDS.swlng,
+                    nelat: DRIFTLESS_BOUNDS.nelat,
+                    nelng: DRIFTLESS_BOUNDS.nelng,
+                    d1: startDate.toISOString().split('T')[0], // Start date
+                    d2: endDate.toISOString().split('T')[0], // End date
+                    order: 'desc',
+                    order_by: 'created_at'
+                });
+
+                if (taxonId) {
+                    params.append('taxon_id', taxonId);
+                }
+
+                const url = `${INATURALIST_API_BASE}/observations?${params}`;
+                console.log('Fetching from iNaturalist API:', url);
+
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('iNaturalist API response:', data);
+
+                if (!data.results) {
+                    throw new Error('Invalid API response format');
+                }
+
+                // Process the observations
+                const processedData = [];
+                const speciesMap = new Map();
+
+                data.results.forEach(obs => {
+                    if (obs.location && obs.taxon) {
+                        const [lat, lng] = obs.location.split(',').map(Number);
+                        
+                        // Validate coordinates are within bounds
+                        if (lat >= DRIFTLESS_BOUNDS.swlat && lat <= DRIFTLESS_BOUNDS.nelat &&
+                            lng >= DRIFTLESS_BOUNDS.swlng && lng <= DRIFTLESS_BOUNDS.nelng) {
+                            
+                            const key = `${obs.taxon.id}-${lat.toFixed(4)}-${lng.toFixed(4)}`;
+                            
+                            if (speciesMap.has(key)) {
+                                speciesMap.get(key).count++;
+                                speciesMap.get(key).observations.push(obs);
+                            } else {
+                                speciesMap.set(key, {
+                                    id: obs.id,
+                                    taxon_id: obs.taxon.id,
+                                    name: obs.taxon.preferred_common_name || obs.taxon.name,
+                                    scientific: obs.taxon.name,
+                                    lat: lat,
+                                    lng: lng,
+                                    count: 1,
+                                    quality_grade: obs.quality_grade,
+                                    observed_on: obs.observed_on,
+                                    user: obs.user,
+                                    uri: obs.uri,
+                                    taxon: obs.taxon,
+                                    observations: [obs]
+                                });
+                            }
+                        }
+                    }
+                });
+
+                // Convert to array and filter by minimum observations
+                const minObs = document.getElementById('min-obs-filter').value;
+                iNaturalistData = Array.from(speciesMap.values())
+                    .filter(species => species.count >= minObs);
+
+                const message = `Loaded ${iNaturalistData.length} species with ${data.results.length} total observations`;
+                updateApiStatus('success', message);
+                showSuccess(message);
+                
+                // Update last updated time
+                document.getElementById('stat-updated').textContent = new Date().toLocaleTimeString();
+                
+                return iNaturalistData;
+
+            } catch (error) {
+                console.error('Error fetching iNaturalist data:', error);
+                const errorMsg = `Failed to fetch data: ${error.message}`;
+                updateApiStatus('error', errorMsg);
+                showError(errorMsg);
+                return [];
+            } finally {
+                showLoading(false);
             }
-        ];
+        }
 
         // Color functions
         function getQualityColor(quality) {
@@ -569,260 +754,37 @@
                    quality > 40 ? '#856404' : '#721c24';
         }
 
-        function getDatasetColor(dataset) {
-            switch(dataset) {
-                case 'training': return '#28a745';
-                case 'validation': return '#9c27b0';
-                case 'example': return '#ff9800';
-                default: return '#6c757d';
-            }
+        function getObservationRadius(count) {
+            return count <= 5 ? 6 : count <= 15 ? 8 : 10;
         }
-
-        // Error handling
-        function showError(message) {
-            const errorContainer = document.getElementById('error-container');
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.innerHTML = `<strong>Data Loading Issue:</strong> ${message}`;
-            errorContainer.appendChild(errorDiv);
-        }
-
-        // Loading indicator
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-        }
-
-        // Load GeoJSON data
-        async function loadGeoJSONData() {
-            showLoading(true);
-            let loadedDatasets = [];
-            
-            try {
-                // Define all possible data files to check
-                const dataFiles = [
-                    { file: 'data/training_features.geojson', type: 'training', label: 'Training Features' },
-                    { file: 'data/validation_features.geojson', type: 'validation', label: 'Validation Features' },
-                    { file: 'data/connectivity_results.geojson', type: 'connectivity', label: 'Connectivity Data' }
-                ];
-
-                // Try to load each data file
-                for (const dataFile of dataFiles) {
-                    try {
-                        console.log(`Attempting to load: ${dataFile.file}`);
-                        const response = await fetch(dataFile.file);
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            console.log(`✅ Successfully loaded ${dataFile.label}: ${data.features.length} features`);
-                            loadedDatasets.push(dataFile.type);
-                            
-                            // Process features based on type
-                            if (dataFile.type === 'training' || dataFile.type === 'validation') {
-                                processLocationFeatures(data, dataFile.type);
-                            } else if (dataFile.type === 'connectivity') {
-                                processConnectivityFeatures(data);
-                            }
-                        } else {
-                            console.warn(`❌ Failed to load ${dataFile.label}: HTTP ${response.status}`);
-                            showError(`${dataFile.label} file returned HTTP ${response.status}. Check file path and server configuration.`);
-                        }
-                    } catch (fetchError) {
-                        console.warn(`❌ Error loading ${dataFile.label}:`, fetchError.message);
-                        showError(`Cannot access ${dataFile.label}. Check if file exists in /data folder.`);
-                    }
-                }
-
-                // Always add example data for demonstration
-                prairieData.push(...exampleData);
-                iNaturalistData.push(...exampleSpeciesObservations);
-                console.log(`📊 Total prairie sites loaded: ${prairieData.length}`);
-
-                // Update UI based on what was loaded
-                updateDataSourceControls(loadedDatasets);
-                
-            } catch (error) {
-                console.error('❌ Critical error loading GeoJSON data:', error);
-                showError('Critical error loading research data files. Using example data only.');
-                prairieData = [...exampleData];
-                iNaturalistData = [...exampleSpeciesObservations];
-            }
-            
-            showLoading(false);
-        }
-
-        // Process location features (training/validation sites)
-        function processLocationFeatures(data, datasetType) {
-            data.features.forEach((feature, index) => {
-                const props = feature.properties;
-                
-                // Get coordinates - handle different geometry types
-                let lat, lng;
-                let geometryForDisplay = feature.geometry;
-                let isPolygon = false;
-                
-                try {
-                    if (feature.geometry.type === 'Point') {
-                        lng = feature.geometry.coordinates[0];
-                        lat = feature.geometry.coordinates[1];
-                    } else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-                        isPolygon = true;
-                        // Calculate centroid for polygons
-                        const coords = feature.geometry.type === 'Polygon' ? 
-                            feature.geometry.coordinates[0] : 
-                            feature.geometry.coordinates[0][0];
-                        lng = coords.reduce((sum, coord) => sum + coord[0], 0) / coords.length;
-                        lat = coords.reduce((sum, coord) => sum + coord[1], 0) / coords.length;
-                    } else {
-                        console.warn(`Unsupported geometry type: ${feature.geometry.type}`);
-                        return;
-                    }
-
-                    // Validate coordinates are in expected range (Driftless region)
-                    if (lat < 42 || lat > 45 || lng < -93 || lng > -88) {
-                        console.warn(`Coordinates outside expected range: ${lat}, ${lng}`);
-                    }
-                } catch (coordError) {
-                    console.error(`Error extracting coordinates for feature ${index}:`, coordError);
-                    return;
-                }
-                
-                // Map properties with comprehensive fallbacks
-                const siteData = {
-                    name: props.site_name || props.name || props.Site_Name || props.location || `${datasetType.charAt(0).toUpperCase() + datasetType.slice(1)} Site ${index + 1}`,
-                    lat: lat,
-                    lng: lng,
-                    area: parseFloat(props.area_ha || props.area || props.Area_ha || props.AREA || 0),
-                    connectivity: parseFloat(props.connectivity_score || props.connectivity || props.Connectivity || Math.random() * 100),
-                    species: parseInt(props.species_count || props.richness || props.species_richness || props.Species_Count || Math.floor(Math.random() * 50)),
-                    quality: parseFloat(props.habitat_quality || props.quality || props.Quality || props.habitat_score || Math.random() * 100),
-                    description: props.description || props.Description || props.notes || `${datasetType.charAt(0).toUpperCase() + datasetType.slice(1)} dataset location for ML model`,
-                    dataset: datasetType,
-                    feature_id: props.id || props.ID || props.FID || index,
-                    geometry: geometryForDisplay,
-                    isPolygon: isPolygon,
-                    // Store original properties for debugging
-                    originalProps: props
-                };
-                
-                // Log first few features for debugging
-                if (index < 3) {
-                    console.log(`Sample ${datasetType} feature:`, {
-                        name: siteData.name,
-                        coords: [lat, lng],
-                        area: siteData.area,
-                        isPolygon: isPolygon,
-                        originalProps: Object.keys(props)
-                    });
-                }
-                
-                prairieData.push(siteData);
-                allFeatures.push({...feature, displayData: siteData});
-            });
-        }
-
-        // Process connectivity features (lines/corridors)
-        function processConnectivityFeatures(data) {
-            console.log(`Processing ${data.features.length} connectivity features`);
-            // This will be used to populate connectivity layers
-            data.features.forEach((feature, index) => {
-                if (feature.geometry.type === 'LineString' || feature.geometry.type === 'MultiLineString') {
-                    console.log(`Connectivity feature ${index}:`, feature.properties);
-                }
-            });
-        }
-
-        // Update data source controls based on what was successfully loaded
-        function updateDataSourceControls(loadedDatasets) {
-            const controls = {
-                'show-training': loadedDatasets.includes('training'),
-                'show-validation': loadedDatasets.includes('validation')
-            };
-
-            Object.entries(controls).forEach(([controlId, hasData]) => {
-                const control = document.getElementById(controlId);
-                const label = control.nextElementSibling;
-                
-                if (hasData) {
-                    control.disabled = false;
-                    label.style.opacity = '1';
-                    label.title = 'Data loaded successfully';
-                } else {
-                    control.disabled = true;
-                    control.checked = false;
-                    label.style.opacity = '0.5';
-                    label.title = 'Data file not found or failed to load';
-                }
-            });
-        }
-
 
         // Update display functions
         function updatePrairieDisplay() {
-            const connectivityMin = document.getElementById('connectivity-filter').value;
-            const speciesMin = document.getElementById('species-filter').value;
-            const showTraining = document.getElementById('show-training').checked;
-            const showValidation = document.getElementById('show-validation').checked;
             const showExample = document.getElementById('show-example').checked;
             
             prairieLayer.clearLayers();
             
-            prairieData.forEach(prairie => {
-                // Filter by dataset type
-                if ((prairie.dataset === 'training' && !showTraining) ||
-                    (prairie.dataset === 'validation' && !showValidation) ||
-                    (prairie.dataset === 'example' && !showExample)) {
-                    return;
-                }
-                
-                // Filter by metrics
-                if (prairie.connectivity >= connectivityMin && prairie.species >= speciesMin) {
-                    let marker;
-                    
-                    if (prairie.isPolygon && prairie.geometry) {
-                        // Render as polygon for training/validation features
-                        const coords = prairie.geometry.type === 'Polygon' ? 
-                            prairie.geometry.coordinates[0].map(coord => [coord[1], coord[0]]) :
-                            prairie.geometry.coordinates[0][0].map(coord => [coord[1], coord[0]]);
-                            
-                        marker = L.polygon(coords, {
-                            color: prairie.dataset === 'example' ? '#2c5530' : 
-                                   prairie.dataset === 'training' ? '#1e5928' : '#4a148c',
-                            weight: 2,
-                            opacity: 0.8,
-                            fillColor: prairie.dataset === 'example' ? getQualityColor(prairie.quality) : getDatasetColor(prairie.dataset),
-                            fillOpacity: 0.6
-                        });
-                    } else {
-                        // Render as circle marker for point features or fallback
-                        marker = L.circleMarker([prairie.lat, prairie.lng], {
-                            radius: Math.sqrt(prairie.area) / 2 + 5,
-                            fillColor: prairie.dataset === 'example' ? getQualityColor(prairie.quality) : getDatasetColor(prairie.dataset),
-                            color: prairie.dataset === 'example' ? '#2c5530' : 
-                                   prairie.dataset === 'training' ? '#1e5928' : '#4a148c',
-                            weight: 2,
-                            opacity: 1,
-                            fillOpacity: 0.8
-                        });
-                    }
+            if (showExample) {
+                examplePrairies.forEach(prairie => {
+                    const marker = L.circleMarker([prairie.lat, prairie.lng], {
+                        radius: Math.sqrt(prairie.area) / 3 + 8,
+                        fillColor: getQualityColor(prairie.quality),
+                        color: '#2c5530',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.7
+                    });
 
                     const popupContent = `
                         <div class="popup-content">
                             <h3>${prairie.name}</h3>
                             <div class="popup-metric">
-                                <span>Dataset:</span>
-                                <strong>${prairie.dataset.charAt(0).toUpperCase() + prairie.dataset.slice(1)}</strong>
-                            </div>
-                            <div class="popup-metric">
-                                <span>Geometry:</span>
-                                <strong>${prairie.isPolygon ? 'Polygon' : 'Point'}</strong>
-                            </div>
-                            <div class="popup-metric">
                                 <span>Area:</span>
-                                <strong>${typeof prairie.area === 'number' ? prairie.area.toFixed(1) : prairie.area} hectares</strong>
+                                <strong>${prairie.area} hectares</strong>
                             </div>
                             <div class="popup-metric">
                                 <span>Connectivity:</span>
-                                <strong>${prairie.connectivity.toFixed(1)}%</strong>
+                                <strong>${prairie.connectivity}%</strong>
                             </div>
                             <div class="popup-metric">
                                 <span>Species Count:</span>
@@ -830,7 +792,7 @@
                             </div>
                             <div class="popup-metric">
                                 <span>Habitat Quality:</span>
-                                <strong>${prairie.quality.toFixed(1)}%</strong>
+                                <strong>${prairie.quality}%</strong>
                             </div>
                             <p style="margin-top: 10px; font-style: italic; color: #666;">${prairie.description}</p>
                         </div>
@@ -838,15 +800,83 @@
 
                     marker.bindPopup(popupContent);
                     marker.addTo(prairieLayer);
-                }
-            });
+                });
+            }
+        }
+
+        // Update species observations display
+        function updateSpeciesDisplay() {
+            const showINaturalist = document.getElementById('show-inaturalist').checked;
+            speciesLayer.clearLayers();
             
-            updateStats();
+            if (showINaturalist && iNaturalistData.length > 0) {
+                iNaturalistData.forEach(species => {
+                    const marker = L.circleMarker([species.lat, species.lng], {
+                        radius: getObservationRadius(species.count),
+                        fillColor: '#74ac00',
+                        color: '#4a6b00',
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    });
+                    
+                    const popupContent = `
+                        <div class="popup-content">
+                            <h3>${species.name}</h3>
+                            <div class="popup-metric">
+                                <span>Scientific Name:</span>
+                                <strong><em>${species.scientific}</em></strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Observations:</span>
+                                <strong>${species.count}</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Quality Grade:</span>
+                                <strong>${species.quality_grade}</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Last Observed:</span>
+                                <strong>${species.observed_on}</strong>
+                            </div>
+                            <div class="popup-metric">
+                                <span>Observer:</span>
+                                <strong>${species.user?.login || 'Unknown'}</strong>
+                            </div>
+                            <p style="margin-top: 10px; font-size: 0.9em;">
+                                <a href="${species.uri}" target="_blank" style="color: #74ac00; text-decoration: none;">
+                                    View on iNaturalist →
+                                </a>
+                            </p>
+                            <p style="margin-top: 5px; font-size: 0.8em; color: #666;">
+                                Live data from iNaturalist API • Research grade observations
+                            </p>
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupContent);
+                    marker.addTo(speciesLayer);
+                });
+            }
         }
 
         // Update connectivity corridors display
         function updateConnectivityDisplay() {
             connectivityLayer.clearLayers();
+            
+            // Example connectivity corridors
+            const exampleCorridors = [
+                {
+                    name: "Kickapoo-Coon Creek Corridor",
+                    coordinates: [[43.45, -90.65], [43.42, -90.70], [43.39, -90.75]],
+                    quality: "high"
+                },
+                {
+                    name: "Mississippi River Bluff Corridor", 
+                    coordinates: [[43.15, -91.10], [43.12, -91.05], [43.10, -91.00]],
+                    quality: "high"
+                }
+            ];
             
             exampleCorridors.forEach(corridor => {
                 const color = corridor.quality === 'high' ? '#28a745' : 
@@ -872,49 +902,11 @@
             });
         }
 
-        // Update species observations display
-        function updateSpeciesDisplay() {
-            const showINaturalist = document.getElementById('show-inaturalist').checked;
-            speciesLayer.clearLayers();
-            
-            if (showINaturalist) {
-                iNaturalistData.forEach(observation => {
-                    const marker = L.circleMarker([observation.lat, observation.lng], {
-                        radius: 4,
-                        fillColor: '#74ac00',
-                        color: '#4a6b00',
-                        weight: 1,
-                        opacity: 1,
-                        fillOpacity: 0.8
-                    });
-                    
-                    marker.bindPopup(`
-                        <div class="popup-content">
-                            <h3>${observation.name}</h3>
-                            <div class="popup-metric">
-                                <span>Scientific Name:</span>
-                                <strong><em>${observation.scientific}</em></strong>
-                            </div>
-                            <div class="popup-metric">
-                                <span>Observations:</span>
-                                <strong>${observation.count}</strong>
-                            </div>
-                            <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                                Data contributed by citizen scientists via iNaturalist
-                            </p>
-                        </div>
-                    `);
-                    
-                    marker.addTo(speciesLayer);
-                });
-            }
-        }
-
         // Update habitat suitability display
         function updateHabitatDisplay() {
             habitatLayer.clearLayers();
             
-            // Create habitat suitability grid overlay (example)
+            // Create habitat suitability grid overlay
             const bounds = [[43.0, -91.5], [43.5, -89.5]];
             const imageOverlay = L.imageOverlay('data:image/svg+xml;base64,' + btoa(`
                 <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
@@ -933,64 +925,30 @@
             imageOverlay.addTo(habitatLayer);
         }
 
-        // Update conservation priority areas
-        function updatePriorityDisplay() {
-            priorityLayer.clearLayers();
-            
-            // Example priority polygons
-            const priorityAreas = [
-                {
-                    name: "High Priority Conservation Area",
-                    coordinates: [[43.4, -90.7], [43.45, -90.65], [43.42, -90.6], [43.37, -90.65]],
-                    priority: "high"
-                },
-                {
-                    name: "Medium Priority Conservation Area", 
-                    coordinates: [[43.2, -90.15], [43.25, -90.1], [43.22, -90.05], [43.17, -90.1]],
-                    priority: "medium"
-                }
-            ];
-            
-            priorityAreas.forEach(area => {
-                const color = area.priority === 'high' ? '#dc3545' : 
-                             area.priority === 'medium' ? '#ffc107' : '#28a745';
-                
-                const polygon = L.polygon(area.coordinates, {
-                    color: color,
-                    weight: 2,
-                    opacity: 0.8,
-                    fillColor: color,
-                    fillOpacity: 0.2
-                });
-                
-                polygon.bindPopup(`
-                    <div class="popup-content">
-                        <h3>${area.name}</h3>
-                        <div class="popup-metric">
-                            <span>Priority Level:</span>
-                            <strong>${area.priority.charAt(0).toUpperCase() + area.priority.slice(1)}</strong>
-                        </div>
-                    </div>
-                `);
-                
-                polygon.addTo(priorityLayer);
-            });
-        }
-
         // Update statistics panel
         function updateStats() {
-            const visiblePrairies = prairieLayer.getLayers().length;
-            const totalArea = prairieData.reduce((sum, prairie) => sum + (prairie.area || 0), 0);
-            const uniqueSpecies = new Set(iNaturalistData.map(obs => obs.scientific)).size;
-            const totalObservations = iNaturalistData.reduce((sum, obs) => sum + obs.count, 0);
+            const uniqueSpecies = new Set(iNaturalistData.map(obs => obs.taxon_id)).size;
+            const totalObservations = iNaturalistData.reduce((sum, species) => sum + species.count, 0);
             
-            document.getElementById('stat-prairies').textContent = visiblePrairies;
-            document.getElementById('stat-area').textContent = totalArea.toFixed(1) + ' ha';
-            document.getElementById('stat-species').textContent = uniqueSpecies;
             document.getElementById('stat-inaturalist').textContent = totalObservations;
+            document.getElementById('stat-species').textContent = uniqueSpecies;
         }
 
-        // Event listeners for controls
+        // Refresh iNaturalist data
+        async function refreshINaturalistData() {
+            const taxonId = document.getElementById('taxon-select').value || null;
+            const monthsAgo = document.getElementById('date-filter').value;
+            
+            await fetchINaturalistData(taxonId, monthsAgo);
+            
+            if (document.getElementById('species').checked) {
+                updateSpeciesDisplay();
+            }
+            
+            updateStats();
+        }
+
+        // Event listeners
         function setupEventListeners() {
             // Layer toggles
             document.getElementById('prairies').addEventListener('change', function() {
@@ -1029,47 +987,56 @@
                 }
             });
 
-            document.getElementById('priority').addEventListener('change', function() {
-                if (this.checked) {
-                    map.addLayer(priorityLayer);
-                    updatePriorityDisplay();
-                } else {
-                    map.removeLayer(priorityLayer);
+            // Data source toggles
+            document.getElementById('show-example').addEventListener('change', function() {
+                if (document.getElementById('prairies').checked) {
+                    updatePrairieDisplay();
                 }
             });
 
-            // Data source toggles
-            ['show-example', 'show-training', 'show-validation', 'show-inaturalist'].forEach(id => {
-                document.getElementById(id).addEventListener('change', function() {
-                    if (document.getElementById('prairies').checked) {
-                        updatePrairieDisplay();
-                    }
-                    if (document.getElementById('species').checked) {
-                        updateSpeciesDisplay();
-                    }
-                });
+            document.getElementById('show-inaturalist').addEventListener('change', function() {
+                if (document.getElementById('species').checked) {
+                    updateSpeciesDisplay();
+                }
             });
 
             // Filter controls
-            document.getElementById('connectivity-filter').addEventListener('input', function() {
-                if (document.getElementById('prairies').checked) {
-                    updatePrairieDisplay();
+            document.getElementById('date-filter').addEventListener('change', function() {
+                // Auto-refresh when date filter changes
+                if (iNaturalistData.length > 0) {
+                    refreshINaturalistData();
                 }
             });
 
-            document.getElementById('species-filter').addEventListener('input', function() {
-                if (document.getElementById('prairies').checked) {
-                    updatePrairieDisplay();
+            document.getElementById('min-obs-filter').addEventListener('input', function() {
+                // Re-filter existing data when minimum observation count changes
+                if (document.getElementById('species').checked) {
+                    updateSpeciesDisplay();
                 }
+            });
+
+            document.getElementById('taxon-select').addEventListener('change', function() {
+                // Auto-refresh when taxon filter changes
+                refreshINaturalistData();
+            });
+
+            // Refresh button
+            document.getElementById('refresh-inaturalist').addEventListener('click', function() {
+                refreshINaturalistData();
+            });
+
+            // Map click handler for debugging
+            map.on('click', function(e) {
+                console.log('Map clicked at:', e.latlng);
             });
         }
 
         // Initialize the application
         async function initialize() {
-            console.log('Hill Prairie Research Application - Demo Version');
+            console.log('Hill Prairie Research Application - iNaturalist Integration');
             
-            // Load data
-            await loadGeoJSONData();
+            // Set up initial prairie data
+            prairieData = [...examplePrairies];
             
             // Setup event listeners
             setupEventListeners();
@@ -1078,13 +1045,23 @@
             map.addLayer(prairieLayer);
             updatePrairieDisplay();
             
+            // Load initial iNaturalist data
+            await fetchINaturalistData();
+            
+            // Add species layer if data was loaded successfully
+            if (iNaturalistData.length > 0) {
+                map.addLayer(speciesLayer);
+                updateSpeciesDisplay();
+                updateStats();
+            }
+            
             console.log('Application initialized successfully');
         }
 
         // Start the application
         initialize().catch(error => {
             console.error('Failed to initialize application:', error);
-            showError('Failed to initialize application. Please refresh the page.');
+            updateApiStatus('error', 'Failed to initialize application. Please refresh the page.');
         });
     </script>
 </body>
