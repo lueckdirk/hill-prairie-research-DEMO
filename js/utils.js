@@ -105,9 +105,19 @@ export function generatePrairiePopupContent(prairie) {
 
 // UPDATED: Generate popup content for species observations using correct field names
 export function generateSpeciesPopupContent(observation) {
-    // Get the species name - use the actual field name 'name'
-    const speciesName = observation.name || 'Unknown Species';
-    const commonName = observation.iconic_taxon_name || '';
+    // Handle observations without identified species
+    let speciesName = 'Unidentified Observation';
+    let subtitle = '';
+    
+    if (observation.name) {
+        speciesName = observation.name;
+        if (observation.iconic_taxon_name) {
+            subtitle = `${observation.iconic_taxon_name} - ${observation.rank || ''}`;
+        }
+    } else if (observation.iconic_taxon_name) {
+        // If no species name but we have a taxon group
+        speciesName = `Unidentified ${observation.iconic_taxon_name}`;
+    }
     
     // Build the popup content
     let content = `<div class="popup-content species-popup">`;
@@ -115,12 +125,12 @@ export function generateSpeciesPopupContent(observation) {
     // Species name as header
     content += `<h3>${speciesName}</h3>`;
     
-    // Common name if available
-    if (commonName && commonName !== speciesName) {
-        content += `<p style="font-style: italic; color: #666; margin: 5px 0 10px 0;">${commonName}</p>`;
+    // Subtitle if available
+    if (subtitle) {
+        content += `<p style="font-style: italic; color: #666; margin: 5px 0 10px 0;">${subtitle}</p>`;
     }
     
-    // Add observation details using actual field names from iNaturalist data
+    // Add observation details
     content += `<div class="popup-details">`;
     
     // Date
@@ -131,38 +141,32 @@ export function generateSpeciesPopupContent(observation) {
         </div>`;
     }
     
-    // Observer name (use obs_name first, then obs_login as fallback)
+    // Observer
     const observerName = observation.obs_name || observation.obs_login || 'Unknown';
     content += `<div class="popup-metric">
         <span>Observer:</span>
         <strong>${observerName}</strong>
     </div>`;
     
-    // Quality
+    // Quality/Status
     if (observation.quality) {
+        const qualityText = observation.quality === 'research' ? 'Research Grade' :
+                           observation.quality === 'needs_id' ? 'Needs ID' : observation.quality;
         content += `<div class="popup-metric">
-            <span>Quality:</span>
-            <strong>${observation.quality}</strong>
+            <span>Status:</span>
+            <strong>${qualityText}</strong>
         </div>`;
     }
     
     // Description if available
     if (observation.description) {
         content += `<div class="popup-metric">
-            <span>Description:</span>
+            <span>Notes:</span>
             <strong>${observation.description}</strong>
         </div>`;
     }
     
-    // Geoprivacy if relevant
-    if (observation.geoprivacy && observation.geoprivacy !== 'NULL') {
-        content += `<div class="popup-metric">
-            <span>Location:</span>
-            <strong>Obscured (${observation.geoprivacy})</strong>
-        </div>`;
-    }
-    
-    // ID if available
+    // Observation ID
     if (observation.id) {
         content += `<div class="popup-metric">
             <span>Observation ID:</span>
@@ -180,24 +184,24 @@ export function generateSpeciesPopupContent(observation) {
     
     content += `</div>`; // Close popup-details
     
-    // Add images if available
+    // Add first image if available
     if (observation.picture1) {
-        content += `<div style="margin-top: 10px;">
-            <img src="${observation.picture1}" alt="Observation photo" style="max-width: 200px; border-radius: 4px;">
+        content += `<div style="margin-top: 10px; text-align: center;">
+            <img src="${observation.picture1}" alt="Observation photo" 
+                 style="max-width: 250px; max-height: 200px; border-radius: 4px; cursor: pointer;"
+                 onclick="window.open('${observation.picture1}', '_blank')">
         </div>`;
     }
     
-    // Add link to iNaturalist if available
+    // Add link to iNaturalist
     if (observation.url) {
         content += `<p style="margin-top: 10px; text-align: center;">
-            <a href="${observation.url}" target="_blank" style="color: #74ac00;">View on iNaturalist →</a>
+            <a href="${observation.url}" target="_blank" 
+               style="color: #74ac00; text-decoration: none; font-weight: bold;">
+               View on iNaturalist →
+            </a>
         </p>`;
     }
-    
-    // Add data source attribution
-    content += `<p style="margin-top: 10px; font-size: 0.85em; color: #666; font-style: italic; text-align: center;">
-        Data from iNaturalist citizen science platform
-    </p>`;
     
     content += `</div>`; // Close popup-content
     
