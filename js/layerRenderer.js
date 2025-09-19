@@ -175,7 +175,7 @@ export function updateConnectivityDisplay() {
     console.log(`Rendered ${renderedCount} connectivity features`);
 }
 
-// Update species observations display - ENHANCED WITH DEBUGGING
+// Update species observations display - ENHANCED WITH ZOOM-BASED RENDERING
 export function updateSpeciesDisplay() {
     console.log('Starting updateSpeciesDisplay function');
     
@@ -188,15 +188,28 @@ export function updateSpeciesDisplay() {
     const iNaturalistData = getINaturalistData();
     const filters = getFilterValues();
     
-    console.log('iNaturalist data:', iNaturalistData);
-    console.log('Filters:', filters);
+    // Get current zoom level from map
+    const map = layers.speciesLayer._map;
+    const currentZoom = map ? map.getZoom() : 0;
+    const minZoomForSpecies = 11; // Only show species observations at zoom level 11 or higher
+    
+    console.log(`Current zoom: ${currentZoom}, Min zoom for species: ${minZoomForSpecies}`);
     
     layers.speciesLayer.clearLayers();
     let renderedCount = 0;
     
+    // Check if zoom level is sufficient for rendering species data
+    if (currentZoom < minZoomForSpecies) {
+        console.log('Zoom level too low for species display - skipping render');
+        return;
+    }
+    
     if (filters.showINaturalist && iNaturalistData && iNaturalistData.length > 0) {
         // Group observations by species for better clustering
         const speciesGroups = {};
+        
+        // Get current map bounds for spatial filtering (optional performance improvement)
+        const bounds = map ? map.getBounds() : null;
         
         iNaturalistData.forEach((observation, index) => {
             try {
@@ -207,7 +220,12 @@ export function updateSpeciesDisplay() {
                     return;
                 }
 
-                const species = observation.species || observation.common_name || observation.name || 'Unknown Species';
+                // Optional: Only include observations within current view bounds for better performance
+                if (bounds && !bounds.contains([observation.lat, observation.lng])) {
+                    return;
+                }
+
+                const species = observation.name || observation.species || observation.common_name || 'Unknown Species';
                 if (!speciesGroups[species]) {
                     speciesGroups[species] = [];
                 }
@@ -217,15 +235,12 @@ export function updateSpeciesDisplay() {
             }
         });
 
-        console.log('Species groups created:', Object.keys(speciesGroups));
+        console.log(`Species groups created: ${Object.keys(speciesGroups).length} species within bounds`);
 
         // Render observations
         Object.entries(speciesGroups).forEach(([species, observations]) => {
             observations.forEach((observation, obsIndex) => {
                 try {
-                    console.log(`Processing observation ${obsIndex} for ${species}:`, observation);
-                    console.log('Available fields in observation:', Object.keys(observation));
-                    
                     const marker = L.circleMarker([observation.lat, observation.lng], {
                         radius: 4,
                         fillColor: COLORS.inaturalist || '#74ac00',
@@ -236,10 +251,7 @@ export function updateSpeciesDisplay() {
                         className: 'inaturalist-marker'
                     });
                     
-                    console.log('About to generate popup content for:', observation);
                     const popupContent = generateSpeciesPopupContent(observation);
-                    console.log('Generated popup content:', popupContent);
-                    
                     marker.bindPopup(popupContent);
                     marker.addTo(layers.speciesLayer);
                     renderedCount++;
@@ -369,6 +381,17 @@ export function updateAllLayers() {
     }
     
     console.log('All layer updates completed');
+}
+
+// Setup zoom-based species rendering (call this after map initialization)
+export function setupSpeciesZoomListener(map) {
+    if (!map) return;
+    
+    map.on('zoomend', () => {
+        updateSpeciesDisplay();
+    });
+    
+    console.log('Species zoom listener setup complete');
 }
 
 // Get current layer statistics (utility function)
