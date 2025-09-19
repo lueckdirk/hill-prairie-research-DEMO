@@ -1,10 +1,9 @@
 // js/app.js
 // Main application initialization and coordination
-
 import { MAP_CONFIG, TILE_LAYERS, COLORS } from './config.js';
 import { loadGeoJSONData, getPrairieData, getINaturalistData } from './dataLoader.js';
 import { initializeMap, getMap, getLayerGroups } from './mapManager.js';
-import { updateAllLayers } from './layerRenderer.js';
+import { updateAllLayers, setupSpeciesZoomListener } from './layerRenderer.js';
 import { setupEventListeners, updateStats } from './uiController.js';
 
 // Global application state
@@ -23,7 +22,7 @@ async function initialize() {
         app.map = initializeMap();
         app.layers = getLayerGroups();
         console.log('✅ Map initialized');
-
+        
         // Step 2: Load data
         await loadGeoJSONData();
         console.log('✅ Data loaded');
@@ -32,7 +31,11 @@ async function initialize() {
         setupEventListeners();
         console.log('✅ Event listeners setup');
         
-        // Step 4: Initialize default layers
+        // Step 4: Setup zoom-based species rendering
+        setupSpeciesZoomListener(app.map);
+        console.log('✅ Species zoom listener setup');
+        
+        // Step 5: Initialize default layers
         app.map.addLayer(app.layers.prairieLayer);
         updateAllLayers();
         updateStats();
@@ -44,10 +47,12 @@ async function initialize() {
     } catch (error) {
         console.error('Failed to initialize application:', error);
         const errorContainer = document.getElementById('error-container');
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.innerHTML = `<strong>Initialization Error:</strong> Failed to initialize application. Please refresh the page.`;
-        errorContainer.appendChild(errorDiv);
+        if (errorContainer) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<strong>Initialization Error:</strong> Failed to initialize application. Please refresh the page.`;
+            errorContainer.appendChild(errorDiv);
+        }
     }
 }
 
