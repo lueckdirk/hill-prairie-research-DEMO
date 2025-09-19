@@ -105,60 +105,64 @@ export function generatePrairiePopupContent(prairie) {
 
 // UPDATED: Generate popup content for species observations using correct field names
 export function generateSpeciesPopupContent(observation) {
-    // Get the species name - use the actual column names from your data
-    const speciesName = observation.name || observation.common_name || 'Unknown Species';
-    const scientificName = observation.scientific || '';
+    // Get the species name - use the actual field name 'name'
+    const speciesName = observation.name || 'Unknown Species';
+    const commonName = observation.iconic_taxon_name || '';
     
     // Build the popup content
-    let content = `<div class="popup-content">`;
+    let content = `<div class="popup-content species-popup">`;
     
     // Species name as header
     content += `<h3>${speciesName}</h3>`;
     
-    // Scientific name if different from common name
-    if (scientificName && scientificName !== speciesName) {
-        content += `<p style="font-style: italic; color: #666; margin: 5px 0 10px 0;"><em>${scientificName}</em></p>`;
+    // Common name if available
+    if (commonName && commonName !== speciesName) {
+        content += `<p style="font-style: italic; color: #666; margin: 5px 0 10px 0;">${commonName}</p>`;
     }
     
-    // Add observation details using your actual column names
+    // Add observation details using actual field names from iNaturalist data
     content += `<div class="popup-details">`;
     
-    // Date if available
+    // Date
     if (observation.date) {
-        const date = new Date(observation.date);
-        if (!isNaN(date.getTime())) {
-            content += `<div class="popup-metric">
-                <span>Observed:</span>
-                <strong>${date.toLocaleDateString()}</strong>
-            </div>`;
-        }
-    }
-    
-    // Observer name
-    if (observation.observer) {
         content += `<div class="popup-metric">
-            <span>Observer:</span>
-            <strong>${observation.observer}</strong>
+            <span>Observed:</span>
+            <strong>${formatDate(observation.date)}</strong>
         </div>`;
     }
     
-    // Count if more than 1
-    if (observation.count && observation.count > 1) {
-        content += `<div class="popup-metric">
-            <span>Count:</span>
-            <strong>${observation.count}</strong>
-        </div>`;
-    }
+    // Observer name (use obs_name first, then obs_login as fallback)
+    const observerName = observation.obs_name || observation.obs_login || 'Unknown';
+    content += `<div class="popup-metric">
+        <span>Observer:</span>
+        <strong>${observerName}</strong>
+    </div>`;
     
-    // Quality grade if available
-    if (observation.quality_grade) {
+    // Quality
+    if (observation.quality) {
         content += `<div class="popup-metric">
             <span>Quality:</span>
-            <strong>${observation.quality_grade}</strong>
+            <strong>${observation.quality}</strong>
         </div>`;
     }
     
-    // ID if available (useful for referencing specific observations)
+    // Description if available
+    if (observation.description) {
+        content += `<div class="popup-metric">
+            <span>Description:</span>
+            <strong>${observation.description}</strong>
+        </div>`;
+    }
+    
+    // Geoprivacy if relevant
+    if (observation.geoprivacy && observation.geoprivacy !== 'NULL') {
+        content += `<div class="popup-metric">
+            <span>Location:</span>
+            <strong>Obscured (${observation.geoprivacy})</strong>
+        </div>`;
+    }
+    
+    // ID if available
     if (observation.id) {
         content += `<div class="popup-metric">
             <span>Observation ID:</span>
@@ -176,6 +180,20 @@ export function generateSpeciesPopupContent(observation) {
     
     content += `</div>`; // Close popup-details
     
+    // Add images if available
+    if (observation.picture1) {
+        content += `<div style="margin-top: 10px;">
+            <img src="${observation.picture1}" alt="Observation photo" style="max-width: 200px; border-radius: 4px;">
+        </div>`;
+    }
+    
+    // Add link to iNaturalist if available
+    if (observation.url) {
+        content += `<p style="margin-top: 10px; text-align: center;">
+            <a href="${observation.url}" target="_blank" style="color: #74ac00;">View on iNaturalist →</a>
+        </p>`;
+    }
+    
     // Add data source attribution
     content += `<p style="margin-top: 10px; font-size: 0.85em; color: #666; font-style: italic; text-align: center;">
         Data from iNaturalist citizen science platform
@@ -184,6 +202,25 @@ export function generateSpeciesPopupContent(observation) {
     content += `</div>`; // Close popup-content
     
     return content;
+}
+
+// Add this helper function if it doesn't exist already
+function formatDate(dateString) {
+    if (!dateString) return 'Unknown date';
+    try {
+        // Handle the specific date format from iNaturalist (e.g., "2023-08-30 16:01:19")
+        const date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+        return dateString;
+    } catch (e) {
+        return dateString;
+    }
 }
 
 // FIXED: Generate popup content for connectivity corridors
@@ -259,11 +296,11 @@ export function calculateStats(prairieData, iNaturalistData, connectivityData, v
     const visiblePrairies = visibleLayers || 0;
     const totalArea = prairieData.reduce((sum, prairie) => sum + (prairie.area || 0), 0);
     
-    // Calculate unique species from iNaturalist data using correct field names
+    // Calculate unique species from iNaturalist data using correct field name 'name'
     const uniqueSpecies = iNaturalistData.length > 0 ? 
-        new Set(iNaturalistData.map(obs => obs.name || obs.scientific || obs.common_name || 'Unknown')).size : 0;
+        new Set(iNaturalistData.map(obs => obs.name || 'Unknown')).size : 0;
     
-    const totalObservations = iNaturalistData.reduce((sum, obs) => sum + (obs.count || 1), 0);
+    const totalObservations = iNaturalistData.length;
     
     // Calculate connectivity features
     const connectivityCount = connectivityData ? connectivityData.length : 0;
