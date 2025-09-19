@@ -105,43 +105,118 @@ export function generatePrairiePopupContent(prairie) {
 
 // ENHANCED: Generate popup content for species observations
 export function generateSpeciesPopupContent(observation) {
-    const safeName = observation.species || observation.common_name || observation.name || 'Unknown Species';
-    const safeScientific = observation.scientific || observation.scientific_name || 'Unknown';
-    const safeCommonName = observation.common_name || observation.name || '';
-    const safeDate = observation.date || observation.observed_on || 'Unknown date';
-    const safeObserver = observation.observer || observation.user_login || 'Unknown observer';
-    const safeQuality = observation.quality_grade || 'unknown';
-    const safeCount = observation.count || 1;
-
-    return `
-        <div class="popup-content">
-            <h3>${safeName}</h3>
-            ${safeCommonName && safeCommonName !== safeName ? `<p><strong>Common Name:</strong> ${safeCommonName}</p>` : ''}
-            <div class="popup-metric">
-                <span>Scientific Name:</span>
-                <strong><em>${safeScientific}</em></strong>
-            </div>
-            <div class="popup-metric">
-                <span>Observations:</span>
-                <strong>${safeCount}</strong>
-            </div>
-            <div class="popup-metric">
-                <span>Date:</span>
-                <strong>${safeDate}</strong>
-            </div>
-            <div class="popup-metric">
-                <span>Observer:</span>
-                <strong>${safeObserver}</strong>
-            </div>
-            <div class="popup-metric">
-                <span>Quality Grade:</span>
-                <strong>${safeQuality}</strong>
-            </div>
-            <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                Data contributed via iNaturalist citizen science platform
-            </p>
-        </div>
-    `;
+    // Get the species name - use the actual column names from your data
+    const speciesName = observation.name || observation.obs_name || 'Unknown Species';
+    
+    // Get the iNaturalist URL
+    const inatUrl = observation.url || '';
+    
+    // Build the popup content
+    let content = `<div class="popup-content">`;
+    
+    // Species name as header - make it a link if URL is available
+    if (inatUrl && inatUrl !== 'NULL' && inatUrl.trim() !== '') {
+        content += `<h3><a href="${inatUrl}" target="_blank" style="color: #74ac00; text-decoration: none;">${speciesName}</a></h3>`;
+    } else {
+        content += `<h3>${speciesName}</h3>`;
+    }
+    
+    // Add image if available - check all picture columns
+    const imageUrl = observation.picture1 || observation.picture2 || observation.picture3;
+    if (imageUrl && imageUrl !== 'NULL' && imageUrl.trim() !== '') {
+        content += `<div style="text-align: center; margin: 10px 0;">
+            <img src="${imageUrl}" alt="${speciesName}" 
+                 style="max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" 
+                 onerror="this.style.display='none'">
+        </div>`;
+    }
+    
+    // Add observation details using your actual column names
+    content += `<div class="popup-details">`;
+    
+    // Date if available
+    if (observation.date && observation.date !== 'NULL') {
+        const date = new Date(observation.date);
+        if (!isNaN(date.getTime())) {
+            content += `<div class="popup-metric">
+                <span>Observed:</span>
+                <strong>${date.toLocaleDateString()}</strong>
+            </div>`;
+        }
+    }
+    
+    // Observer name
+    if (observation.obs_name && observation.obs_name !== 'NULL') {
+        content += `<div class="popup-metric">
+            <span>Observer:</span>
+            <strong>${observation.obs_name}</strong>
+        </div>`;
+    }
+    
+    // Observer login
+    if (observation.obs_login && observation.obs_login !== 'NULL') {
+        content += `<div class="popup-metric">
+            <span>Observer ID:</span>
+            <strong>@${observation.obs_login}</strong>
+        </div>`;
+    }
+    
+    // Description if available
+    if (observation.description && observation.description !== 'NULL' && observation.description.trim() !== '') {
+        const desc = observation.description.length > 100 ? 
+            observation.description.substring(0, 100) + '...' : 
+            observation.description;
+        content += `<div class="popup-metric">
+            <span>Description:</span>
+            <strong>${desc}</strong>
+        </div>`;
+    }
+    
+    // Quality if available
+    if (observation.quality && observation.quality !== 'NULL') {
+        content += `<div class="popup-metric">
+            <span>Quality:</span>
+            <strong>${observation.quality}</strong>
+        </div>`;
+    }
+    
+    // Precision if available
+    if (observation.precision && observation.precision !== 'NULL') {
+        content += `<div class="popup-metric">
+            <span>Location Precision:</span>
+            <strong>${observation.precision}m</strong>
+        </div>`;
+    }
+    
+    // Coordinates
+    if (observation.lat && observation.lng) {
+        content += `<div class="popup-metric">
+            <span>Coordinates:</span>
+            <strong>${parseFloat(observation.lat).toFixed(4)}, ${parseFloat(observation.lng).toFixed(4)}</strong>
+        </div>`;
+    }
+    
+    content += `</div>`; // Close popup-details
+    
+    // Link to iNaturalist if URL is available
+    if (inatUrl && inatUrl !== 'NULL' && inatUrl.trim() !== '') {
+        content += `<div style="margin-top: 15px; text-align: center;">
+            <a href="${inatUrl}" target="_blank" 
+               style="display: inline-block; padding: 8px 16px; background-color: #74ac00; color: white; 
+                      text-decoration: none; border-radius: 4px; font-weight: bold;">
+                View on iNaturalist →
+            </a>
+        </div>`;
+    }
+    
+    // Add data source attribution
+    content += `<p style="margin-top: 10px; font-size: 0.85em; color: #666; font-style: italic; text-align: center;">
+        Data from iNaturalist citizen science platform
+    </p>`;
+    
+    content += `</div>`; // Close popup-content
+    
+    return content;
 }
 
 // FIXED: Generate popup content for connectivity corridors
