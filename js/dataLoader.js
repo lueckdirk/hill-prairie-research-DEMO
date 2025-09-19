@@ -139,25 +139,50 @@ export function processINaturalistData(data) {
                 return;
             }
             
+            // Map the actual field names from your GeoJSON
             const observation = {
-                id: props.id || props.observation_id || index,
-                species: props.species || props.scientific_name || props.taxon_name,
-                common_name: props.common_name || props.vernacular_name,
+                // Core identification fields
+                id: props.id,
+                name: props.name, // Scientific name (can be null for unidentified)
+                species: props.name, // Keep for backwards compatibility
+                iconic_taxon_name: props.iconic_taxon_name, // e.g., "Insecta", "Plantae"
+                taxon_id: props.taxon_id,
+                rank: props.rank, // e.g., "species", "genus", "family"
+                
+                // Location
                 lat: feature.geometry.coordinates[1],
                 lng: feature.geometry.coordinates[0],
-                date: props.observed_on || props.date || props.observation_date,
-                observer: props.observer || props.user_login || 'Unknown',
-                photo_url: props.photo_url || props.image_url,
-                quality_grade: props.quality_grade || 'unknown',
-                taxon_id: props.taxon_id,
-                url: props.url || props.observation_url,
-                place_guess: props.place_guess || props.location,
+                coordinates: feature.geometry.coordinates, // Keep original [lng, lat]
+                geoprivacy: props.geoprivacy,
+                precision: props.precision,
+                
+                // Observation details
+                date: props.date,
+                obs_login: props.obs_login,
+                obs_name: props.obs_name,
+                observer: props.obs_name || props.obs_login || 'Unknown', // Convenience field
+                description: props.description,
+                quality: props.quality, // "research", "needs_id", etc.
+                quality_grade: props.quality, // Keep for backwards compatibility
+                
+                // Media
+                picture1: props.picture1,
+                picture2: props.picture2,
+                picture3: props.picture3,
+                photo_url: props.picture1, // Keep for backwards compatibility
+                
+                // Links
+                url: props.url,
+                taxon_url: props.taxon_url,
+                
+                // Keep full geometry and original properties
                 geometry: feature.geometry,
                 originalProps: props
             };
             
-            // Validate coordinates
-            if (observation.lat < 42 || observation.lat > 45 || observation.lng < -93 || observation.lng > -88) {
+            // Validate coordinates (Wisconsin Driftless region bounds)
+            if (observation.lat < 42 || observation.lat > 45 || 
+                observation.lng < -93 || observation.lng > -88) {
                 console.warn(`iNaturalist observation outside expected range: ${observation.lat}, ${observation.lng}`);
             }
             
@@ -167,16 +192,24 @@ export function processINaturalistData(data) {
             // Log first few observations for debugging
             if (index < 3) {
                 console.log(`Sample iNaturalist observation:`, {
-                    species: observation.species,
-                    common_name: observation.common_name,
+                    id: observation.id,
+                    name: observation.name || 'Unidentified',
+                    taxon_type: observation.iconic_taxon_name,
+                    observer: observation.observer,
                     coords: [observation.lat, observation.lng],
-                    date: observation.date
+                    date: observation.date,
+                    quality: observation.quality
                 });
             }
         } catch (error) {
             console.error(`Error processing iNaturalist observation ${index}:`, error);
         }
     });
+    
+    // Log summary statistics
+    const identifiedCount = iNaturalistData.filter(obs => obs.name !== null).length;
+    const unidentifiedCount = iNaturalistData.filter(obs => obs.name === null).length;
+    console.log(`Processed ${iNaturalistData.length} observations: ${identifiedCount} identified, ${unidentifiedCount} need ID`);
 }
 
 // Update data source controls based on what was successfully loaded
