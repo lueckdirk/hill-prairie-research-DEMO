@@ -208,7 +208,7 @@ export function updateSpeciesDisplay() {
         // Group observations by species for better clustering
         const speciesGroups = {};
         
-        // Get current map bounds for spatial filtering (optional performance improvement)
+        // Get current map bounds for spatial filtering
         const bounds = map ? map.getBounds() : null;
         
         iNaturalistData.forEach((observation, index) => {
@@ -220,35 +220,82 @@ export function updateSpeciesDisplay() {
                     return;
                 }
 
-                // Optional: Only include observations within current view bounds for better performance
+                // Only include observations within current view bounds for better performance
                 if (bounds && !bounds.contains([observation.lat, observation.lng])) {
                     return;
                 }
 
-                const species = observation.name || observation.species || observation.common_name || 'Unknown Species';
-                if (!speciesGroups[species]) {
-                    speciesGroups[species] = [];
+                // Create a meaningful group key for the observation
+                let groupKey;
+                if (observation.name) {
+                    // For identified species, use the scientific name
+                    groupKey = observation.name;
+                } else if (observation.iconic_taxon_name) {
+                    // For unidentified observations, group by taxonomic group
+                    groupKey = `Unidentified ${observation.iconic_taxon_name}`;
+                } else {
+                    // For completely unknown observations
+                    groupKey = 'Unidentified Observation';
                 }
-                speciesGroups[species].push(observation);
+                
+                if (!speciesGroups[groupKey]) {
+                    speciesGroups[groupKey] = [];
+                }
+                speciesGroups[groupKey].push(observation);
             } catch (error) {
                 console.error(`Error processing iNaturalist observation ${index}:`, error);
             }
         });
 
-        console.log(`Species groups created: ${Object.keys(speciesGroups).length} species within bounds`);
+        console.log(`Species groups created: ${Object.keys(speciesGroups).length} groups within bounds`);
 
-        // Render observations
-        Object.entries(speciesGroups).forEach(([species, observations]) => {
+        // Render observations with different styles based on identification status
+        Object.entries(speciesGroups).forEach(([groupKey, observations]) => {
+            // Determine if this group is identified or not
+            const isIdentified = observations[0].name !== null;
+            const isResearchGrade = observations.some(obs => obs.quality === 'research');
+            
             observations.forEach((observation, obsIndex) => {
                 try {
+                    // Choose color based on quality and identification status
+                    let fillColor, strokeColor, radius;
+                    
+                    if (observation.quality === 'research') {
+                        // Research grade - green
+                        fillColor = '#4CAF50';
+                        strokeColor = '#2E7D32';
+                        radius = 5;
+                    } else if (observation.name) {
+                        // Identified but needs confirmation - orange
+                        fillColor = '#FF9800';
+                        strokeColor = '#F57C00';
+                        radius = 4;
+                    } else {
+                        // Unidentified - red
+                        fillColor = '#F44336';
+                        strokeColor = '#D32F2F';
+                        radius = 4;
+                    }
+                    
                     const marker = L.circleMarker([observation.lat, observation.lng], {
-                        radius: 4,
-                        fillColor: COLORS.inaturalist || '#74ac00',
-                        color: '#4a6b00',
-                        weight: 1,
+                        radius: radius,
+                        fillColor: fillColor,
+                        color: strokeColor,
+                        weight: 1.5,
                         opacity: 1,
                         fillOpacity: 0.8,
-                        className: 'inaturalist-marker'
+                        className: `inaturalist-marker ${observation.quality || 'unknown'}`
+                    });
+                    
+                    // Add hover effect
+                    marker.on('mouseover', function(e) {
+                        this.setRadius(this.options.radius + 2);
+                        this.setStyle({ weight: 3 });
+                    });
+                    
+                    marker.on('mouseout', function(e) {
+                        this.setRadius(this.options.radius);
+                        this.setStyle({ weight: 1.5 });
                     });
                     
                     const popupContent = generateSpeciesPopupContent(observation);
@@ -260,13 +307,23 @@ export function updateSpeciesDisplay() {
                 }
             });
         });
+        
+        // Log statistics about rendered observations
+        const stats = {
+            total: renderedCount,
+            research: iNaturalistData.filter(obs => obs.quality === 'research').length,
+            needsId: iNaturalistData.filter(obs => obs.quality === 'needs_id').length,
+            identified: iNaturalistData.filter(obs => obs.name !== null).length,
+            unidentified: iNaturalistData.filter(obs => obs.name === null).length
+        };
+        console.log('Species observation statistics:', stats);
+        
     } else {
         console.log('Species display skipped - showINaturalist:', filters.showINaturalist, 'data length:', iNaturalistData ? iNaturalistData.length : 0);
     }
 
     console.log(`Rendered ${renderedCount} species observations`);
 }
-
 // Update habitat suitability display - ENHANCED
 export function updateHabitatDisplay() {
     const layers = getLayerGroups();
