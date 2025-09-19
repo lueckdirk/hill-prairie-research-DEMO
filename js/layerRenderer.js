@@ -175,8 +175,10 @@ export function updateConnectivityDisplay() {
     console.log(`Rendered ${renderedCount} connectivity features`);
 }
 
-// Update species observations display - ENHANCED
+// Update species observations display - ENHANCED WITH DEBUGGING
 export function updateSpeciesDisplay() {
+    console.log('Starting updateSpeciesDisplay function');
+    
     const layers = getLayerGroups();
     if (!layers || !layers.speciesLayer) {
         console.warn('Species layer not available');
@@ -185,6 +187,9 @@ export function updateSpeciesDisplay() {
 
     const iNaturalistData = getINaturalistData();
     const filters = getFilterValues();
+    
+    console.log('iNaturalist data:', iNaturalistData);
+    console.log('Filters:', filters);
     
     layers.speciesLayer.clearLayers();
     let renderedCount = 0;
@@ -202,7 +207,7 @@ export function updateSpeciesDisplay() {
                     return;
                 }
 
-                const species = observation.species || observation.common_name || 'Unknown Species';
+                const species = observation.species || observation.common_name || observation.name || 'Unknown Species';
                 if (!speciesGroups[species]) {
                     speciesGroups[species] = [];
                 }
@@ -212,10 +217,14 @@ export function updateSpeciesDisplay() {
             }
         });
 
+        console.log('Species groups created:', Object.keys(speciesGroups));
+
         // Render observations
         Object.entries(speciesGroups).forEach(([species, observations]) => {
-            observations.forEach(observation => {
+            observations.forEach((observation, obsIndex) => {
                 try {
+                    console.log(`Processing observation ${obsIndex} for ${species}:`, observation);
+                    
                     const marker = L.circleMarker([observation.lat, observation.lng], {
                         radius: 4,
                         fillColor: COLORS.inaturalist || '#74ac00',
@@ -226,15 +235,20 @@ export function updateSpeciesDisplay() {
                         className: 'inaturalist-marker'
                     });
                     
+                    console.log('About to generate popup content for:', observation);
                     const popupContent = generateSpeciesPopupContent(observation);
+                    console.log('Generated popup content:', popupContent);
+                    
                     marker.bindPopup(popupContent);
                     marker.addTo(layers.speciesLayer);
                     renderedCount++;
                 } catch (error) {
-                    console.error(`Error rendering species observation:`, error);
+                    console.error(`Error rendering species observation:`, error, observation);
                 }
             });
         });
+    } else {
+        console.log('Species display skipped - showINaturalist:', filters.showINaturalist, 'data length:', iNaturalistData ? iNaturalistData.length : 0);
     }
 
     console.log(`Rendered ${renderedCount} species observations`);
