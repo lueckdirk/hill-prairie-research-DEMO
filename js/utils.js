@@ -103,39 +103,28 @@ export function generatePrairiePopupContent(prairie) {
     `;
 }
 
-// ENHANCED: Generate popup content for species observations
+// UPDATED: Generate popup content for species observations using correct field names
 export function generateSpeciesPopupContent(observation) {
     // Get the species name - use the actual column names from your data
-    const speciesName = observation.name || observation.obs_name || 'Unknown Species';
-    
-    // Get the iNaturalist URL
-    const inatUrl = observation.url || '';
+    const speciesName = observation.name || observation.common_name || 'Unknown Species';
+    const scientificName = observation.scientific || '';
     
     // Build the popup content
     let content = `<div class="popup-content">`;
     
-    // Species name as header - make it a link if URL is available
-    if (inatUrl && inatUrl !== 'NULL' && inatUrl.trim() !== '') {
-        content += `<h3><a href="${inatUrl}" target="_blank" style="color: #74ac00; text-decoration: none;">${speciesName}</a></h3>`;
-    } else {
-        content += `<h3>${speciesName}</h3>`;
-    }
+    // Species name as header
+    content += `<h3>${speciesName}</h3>`;
     
-    // Add image if available - check all picture columns
-    const imageUrl = observation.picture1 || observation.picture2 || observation.picture3;
-    if (imageUrl && imageUrl !== 'NULL' && imageUrl.trim() !== '') {
-        content += `<div style="text-align: center; margin: 10px 0;">
-            <img src="${imageUrl}" alt="${speciesName}" 
-                 style="max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" 
-                 onerror="this.style.display='none'">
-        </div>`;
+    // Scientific name if different from common name
+    if (scientificName && scientificName !== speciesName) {
+        content += `<p style="font-style: italic; color: #666; margin: 5px 0 10px 0;"><em>${scientificName}</em></p>`;
     }
     
     // Add observation details using your actual column names
     content += `<div class="popup-details">`;
     
     // Date if available
-    if (observation.date && observation.date !== 'NULL') {
+    if (observation.date) {
         const date = new Date(observation.date);
         if (!isNaN(date.getTime())) {
             content += `<div class="popup-metric">
@@ -146,45 +135,34 @@ export function generateSpeciesPopupContent(observation) {
     }
     
     // Observer name
-    if (observation.obs_name && observation.obs_name !== 'NULL') {
+    if (observation.observer) {
         content += `<div class="popup-metric">
             <span>Observer:</span>
-            <strong>${observation.obs_name}</strong>
+            <strong>${observation.observer}</strong>
         </div>`;
     }
     
-    // Observer login
-    if (observation.obs_login && observation.obs_login !== 'NULL') {
+    // Count if more than 1
+    if (observation.count && observation.count > 1) {
         content += `<div class="popup-metric">
-            <span>Observer ID:</span>
-            <strong>@${observation.obs_login}</strong>
+            <span>Count:</span>
+            <strong>${observation.count}</strong>
         </div>`;
     }
     
-    // Description if available
-    if (observation.description && observation.description !== 'NULL' && observation.description.trim() !== '') {
-        const desc = observation.description.length > 100 ? 
-            observation.description.substring(0, 100) + '...' : 
-            observation.description;
-        content += `<div class="popup-metric">
-            <span>Description:</span>
-            <strong>${desc}</strong>
-        </div>`;
-    }
-    
-    // Quality if available
-    if (observation.quality && observation.quality !== 'NULL') {
+    // Quality grade if available
+    if (observation.quality_grade) {
         content += `<div class="popup-metric">
             <span>Quality:</span>
-            <strong>${observation.quality}</strong>
+            <strong>${observation.quality_grade}</strong>
         </div>`;
     }
     
-    // Precision if available
-    if (observation.precision && observation.precision !== 'NULL') {
+    // ID if available (useful for referencing specific observations)
+    if (observation.id) {
         content += `<div class="popup-metric">
-            <span>Location Precision:</span>
-            <strong>${observation.precision}m</strong>
+            <span>Observation ID:</span>
+            <strong>${observation.id}</strong>
         </div>`;
     }
     
@@ -197,17 +175,6 @@ export function generateSpeciesPopupContent(observation) {
     }
     
     content += `</div>`; // Close popup-details
-    
-    // Link to iNaturalist if URL is available
-    if (inatUrl && inatUrl !== 'NULL' && inatUrl.trim() !== '') {
-        content += `<div style="margin-top: 15px; text-align: center;">
-            <a href="${inatUrl}" target="_blank" 
-               style="display: inline-block; padding: 8px 16px; background-color: #74ac00; color: white; 
-                      text-decoration: none; border-radius: 4px; font-weight: bold;">
-                View on iNaturalist →
-            </a>
-        </div>`;
-    }
     
     // Add data source attribution
     content += `<p style="margin-top: 10px; font-size: 0.85em; color: #666; font-style: italic; text-align: center;">
@@ -292,9 +259,9 @@ export function calculateStats(prairieData, iNaturalistData, connectivityData, v
     const visiblePrairies = visibleLayers || 0;
     const totalArea = prairieData.reduce((sum, prairie) => sum + (prairie.area || 0), 0);
     
-    // Calculate unique species from iNaturalist data
+    // Calculate unique species from iNaturalist data using correct field names
     const uniqueSpecies = iNaturalistData.length > 0 ? 
-        new Set(iNaturalistData.map(obs => obs.scientific || obs.species || obs.name)).size : 0;
+        new Set(iNaturalistData.map(obs => obs.name || obs.scientific || obs.common_name || 'Unknown')).size : 0;
     
     const totalObservations = iNaturalistData.reduce((sum, obs) => sum + (obs.count || 1), 0);
     
