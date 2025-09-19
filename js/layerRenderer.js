@@ -224,6 +224,7 @@ export function updateSpeciesDisplay() {
             observations.forEach((observation, obsIndex) => {
                 try {
                     console.log(`Processing observation ${obsIndex} for ${species}:`, observation);
+                    console.log('Available fields in observation:', Object.keys(observation));
                     
                     const marker = L.circleMarker([observation.lat, observation.lng], {
                         radius: 4,
