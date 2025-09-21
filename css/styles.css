@@ -310,6 +310,10 @@ select:focus {
 }
 
 /* About Page Styles */
+body.about-body {
+    background: white !important;
+}
+
 .about-page {
     max-width: none;
     min-height: calc(100vh - 120px);
