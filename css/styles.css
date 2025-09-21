@@ -446,7 +446,35 @@ body.about-body {
     font-size: 0.9em;
 }
 
-.org-item a:hover {
+/* County Links */
+.county-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.county-item {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border-left: 3px solid #28a745;
+    font-size: 0.9em;
+}
+
+.county-item strong {
+    color: #2c5530;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.county-item a {
+    color: #28a745;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.county-item a:hover {
     text-decoration: underline;
 }
 .findings-grid {
