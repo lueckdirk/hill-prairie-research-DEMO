@@ -405,7 +405,50 @@ body.about-body {
     text-decoration: underline;
 }
 
-/* Findings Grid */
+/* Organizations Grid */
+.organizations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.org-item {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.org-item:hover {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.org-item h4 {
+    color: #2c5530;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.org-item p {
+    margin: 10px 0;
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+.org-item a {
+    color: #28a745;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.org-item a:hover {
+    text-decoration: underline;
+}
 .findings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
