@@ -227,7 +227,7 @@ function formatDate(dateString) {
     }
 }
 
-// FIXED: Generate popup content for connectivity corridors
+// UPDATED: Generate popup content for connectivity corridors - removed isExample reference
 export function generateCorridorPopupContent(corridor) {
     const safeName = corridor.name || corridor.id || 'Connectivity Corridor';
     const safeQuality = corridor.quality || corridor.strength || 0;
@@ -266,7 +266,6 @@ export function generateCorridorPopupContent(corridor) {
                 <strong>${safeType}</strong>
             </div>
             <p style="margin-top: 10px; font-style: italic; color: #666;">${safeDescription}</p>
-            ${corridor.isExample ? '<p style="margin-top: 5px; font-size: 0.8em; color: #888;"><em>Example/Demo Data</em></p>' : ''}
         </div>
     `;
 }
@@ -318,12 +317,11 @@ export function calculateStats(prairieData, iNaturalistData, connectivityData, v
     };
 }
 
-// UPDATED: Data filtering helpers for new dataset structure
+// UPDATED: Data filtering helpers - removed showExample filter
 export function filterPrairieData(prairieData, filters) {
     return prairieData.filter(prairie => {
-        // Dataset type filter - UPDATED for new structure
-        if ((prairie.dataset === 'prairies' && !filters.showPrairies) ||
-            (prairie.dataset === 'example' && !filters.showExample)) {
+        // Dataset type filter - UPDATED to only check prairies
+        if (prairie.dataset === 'prairies' && !filters.showPrairies) {
             return false;
         }
         
