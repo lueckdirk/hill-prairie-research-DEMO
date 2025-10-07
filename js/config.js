@@ -1,9 +1,10 @@
 // js/config.js
 // Configuration and constants for Hill Prairie Research Application
 
+// UPDATED: Centered on La Crosse County, Wisconsin
 export const MAP_CONFIG = {
-    center: [43.25, -90.8],
-    defaultZoom: 10,
+    center: [43.8041, -91.2396], // La Crosse County coordinates
+    defaultZoom: 11, // Zoomed in to county level
     bounds: [[42.0, -93.0], [45.0, -88.0]] // Driftless region bounds
 };
 
