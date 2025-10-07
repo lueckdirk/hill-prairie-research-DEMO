@@ -22,7 +22,7 @@ export const TILE_LAYERS = {
     }
 };
 
-// UPDATED: Match your actual file names and new dataset structure
+// Data files to load - matches your actual file names
 export const DATA_FILES = [
     { 
         file: 'data/prairies.geojson', 
@@ -41,7 +41,7 @@ export const DATA_FILES = [
     }
 ];
 
-// UPDATED: Added prairie-specific colors and enhanced color scheme
+// Color scheme for different data types and quality levels
 export const COLORS = {
     quality: {
         excellent: '#155724',
@@ -50,9 +50,8 @@ export const COLORS = {
         poor: '#721c24'
     },
     dataset: {
-        prairies: '#1e5928',        // Updated from 'training'
-        connectivity: '#4a6b35',   // New color for connectivity data
-        example: '#ff9800',
+        prairies: '#1e5928',
+        connectivity: '#4a6b35',
         inaturalist: '#74ac00',
         default: '#6c757d'
     },
@@ -69,14 +68,14 @@ export const COLORS = {
     inaturalist: '#74ac00'
 };
 
-// ADDED: Filter configurations for UI
+// Filter configurations for UI
 export const FILTER_CONFIG = {
     connectivity: { min: 0, max: 100, default: 0 },
     species: { min: 0, max: 50, default: 0 },
     area: { min: 0, max: 200, default: 0 }
 };
 
-// ADDED: Map layer configurations
+// Map layer configurations
 export const LAYER_CONFIG = {
     prairieLayer: {
         name: "Hill Prairie Remnants",
@@ -99,3 +98,25 @@ export const LAYER_CONFIG = {
         defaultVisible: false
     }
 };
+
+// Priority areas for conservation (placeholder - add real data as needed)
+export const PRIORITY_AREAS = [
+    // Add your priority area data here if needed
+    // Example format:
+    // {
+    //     name: "Priority Area 1",
+    //     priority: "high",
+    //     area: 150,
+    //     coordinates: [[lat, lng], [lat, lng], ...],
+    //     description: "High priority conservation area"
+    // }
+];
+
+// REMOVED: All example/demo data exports
+// The following have been removed:
+// - EXAMPLE_DATA
+// - EXAMPLE_SPECIES_OBSERVATIONS  
+// - EXAMPLE_CORRIDORS
+//
+// The application now relies entirely on real GeoJSON data files
+// loaded from the /data directory.
