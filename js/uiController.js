@@ -72,59 +72,68 @@ export function setupEventListeners() {
     const map = getMap();
     const layers = getLayerGroups();
 
-    // Layer toggles
-    safeAddEventListener('prairies', 'change', function() {
-        if (this.checked) {
-            addLayer('prairieLayer');
-            updatePrairieDisplay();
-        } else {
-            removeLayer('prairieLayer');
+    // REMOVED: Old layer toggles for 'prairies', 'connectivity', 'species', 'habitat', 'priority'
+    // These checkboxes don't exist in the new HTML structure
+    
+    // Data source toggles - UPDATED to match actual HTML IDs
+    const dataSourceHandlers = {
+        'show-prairies': () => {
+            if (document.getElementById('show-prairies').checked) {
+                addLayer('prairieLayer');
+                updatePrairieDisplay();
+            } else {
+                removeLayer('prairieLayer');
+            }
+            updateStats();
+        },
+        'show-connectivity': () => {
+            if (document.getElementById('show-connectivity').checked) {
+                addLayer('connectivityLayer');
+                updateConnectivityDisplay();
+            } else {
+                removeLayer('connectivityLayer');
+            }
+            updateStats();
+        },
+        'show-inaturalist': () => {
+            if (document.getElementById('show-inaturalist').checked) {
+                addLayer('speciesLayer');
+                updateSpeciesDisplay();
+            } else {
+                removeLayer('speciesLayer');
+            }
+            updateStats();
+        },
+        'species': () => {
+            if (document.getElementById('species').checked) {
+                addLayer('speciesLayer');
+                updateSpeciesDisplay();
+            } else {
+                removeLayer('speciesLayer');
+            }
+            updateStats();
+        },
+        'habitat': () => {
+            if (document.getElementById('habitat').checked) {
+                addLayer('habitatLayer');
+                updateHabitatDisplay();
+            } else {
+                removeLayer('habitatLayer');
+            }
+        },
+        'priority': () => {
+            if (document.getElementById('priority').checked) {
+                addLayer('priorityLayer');
+                updatePriorityDisplay();
+            } else {
+                removeLayer('priorityLayer');
+            }
         }
-        updateStats();
-    });
+    };
 
-    safeAddEventListener('connectivity', 'change', function() {
-        if (this.checked) {
-            addLayer('connectivityLayer');
-            updateConnectivityDisplay();
-        } else {
-            removeLayer('connectivityLayer');
-        }
-        updateStats();
-    });
-
-    safeAddEventListener('species', 'change', function() {
-        if (this.checked) {
-            addLayer('speciesLayer');
-            updateSpeciesDisplay();
-        } else {
-            removeLayer('speciesLayer');
-        }
-        updateStats();
-    });
-
-    safeAddEventListener('habitat', 'change', function() {
-        if (this.checked) {
-            addLayer('habitatLayer');
-            updateHabitatDisplay();
-        } else {
-            removeLayer('habitatLayer');
-        }
-    });
-
-    safeAddEventListener('priority', 'change', function() {
-        if (this.checked) {
-            addLayer('priorityLayer');
-            updatePriorityDisplay();
-        } else {
-            removeLayer('priorityLayer');
-        }
-    });
-
-    // Data source toggles - UPDATED: removed 'show-example'
-    const dataSourceIds = ['show-prairies', 'show-connectivity', 'show-inaturalist'];
-    dataSourceIds.forEach(id => {
-        safeAddEventListener(id, 'change', debouncedUpdate);
+    // Add all data source handlers
+    Object.entries(dataSourceHandlers).forEach(([id, handler]) => {
+        safeAddEventListener(id, 'change', handler);
     });
 
     // Filter controls with debouncing for performance
@@ -138,7 +147,7 @@ export function setupEventListeners() {
 
 // Initialize UI state
 export function initializeUI() {
-    // Set default checked states - UPDATED: removed 'show-example'
+    // Set default checked states
     const defaultChecked = ['show-prairies', 'show-inaturalist'];
     defaultChecked.forEach(id => {
         const element = document.getElementById(id);
@@ -177,7 +186,7 @@ export function updateFilterDisplays() {
     });
 }
 
-// Get current filter values (utility function for other modules) - UPDATED: removed showExample
+// Get current filter values (utility function for other modules)
 export function getCurrentFilters() {
     return {
         connectivityMin: parseInt(document.getElementById('connectivity-filter')?.value || 0),
