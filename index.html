@@ -22,12 +22,8 @@
             <div class="control-group data-toggle">
                 <h3>Data Sources</h3>
                 <div class="layer-control">
-                    <input type="checkbox" id="show-example" checked>
-                    <label for="show-example">Example/Demo Data</label>
-                </div>
-                <div class="layer-control">
                     <input type="checkbox" id="show-prairies" checked>
-                    <label for="show-prairies">Prairie Remnant Sites</label>
+                    <label for="show-prairies">Hill Prairie Remnants</label>
                 </div>
                 <div class="layer-control">
                     <input type="checkbox" id="show-connectivity">
@@ -36,6 +32,18 @@
                 <div class="layer-control">
                     <input type="checkbox" id="show-inaturalist" checked>
                     <label for="show-inaturalist">iNaturalist Observations</label>
+                </div>
+                <div class="layer-control">
+                    <input type="checkbox" id="species">
+                    <label for="species">Species Observations</label>
+                </div>
+                <div class="layer-control">
+                    <input type="checkbox" id="habitat">
+                    <label for="habitat">Habitat Suitability</label>
+                </div>
+                <div class="layer-control">
+                    <input type="checkbox" id="priority">
+                    <label for="priority">Conservation Priority</label>
                 </div>
             </div>
 
@@ -62,31 +70,11 @@
             </div>
 
             <div class="control-group">
-                <h3>Map Layers</h3>
-                <div class="layer-control">
-                    <input type="checkbox" id="prairies" checked>
-                    <label for="prairies">Hill Prairie Remnants</label>
-                </div>
-                <div class="layer-control">
-                    <input type="checkbox" id="connectivity">
-                    <label for="connectivity">Connectivity Corridors</label>
-                </div>
-                <div class="layer-control">
-                    <input type="checkbox" id="species">
-                    <label for="species">Species Observations</label>
-                </div>
-                <div class="layer-control">
-                    <input type="checkbox" id="habitat">
-                    <label for="habitat">Habitat Suitability</label>
-                </div>
-                <div class="layer-control">
-                    <input type="checkbox" id="priority">
-                    <label for="priority">Conservation Priority</label>
-                </div>
-            </div>
-
-            <div class="control-group">
                 <h3>Data Filters</h3>
+                <p style="font-size: 0.85em; color: #666; font-style: italic; margin-bottom: 15px; line-height: 1.4;">
+                    Note: These filters are examples for demonstration purposes. Actual connectivity scores, species richness, and area measurements have not been calculated yet.
+                </p>
+                
                 <label>Connectivity Score:</label>
                 <input type="range" id="connectivity-filter" min="0" max="100" value="0" style="width: 100%; margin: 10px 0;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #666;">
@@ -108,10 +96,6 @@
 
             <div class="legend">
                 <h4>Data Sources</h4>
-                <div class="legend-item">
-                    <div class="legend-color example-marker"></div>
-                    <span>Example/Demo Sites</span>
-                </div>
                 <div class="legend-item">
                     <div class="legend-color prairie-marker"></div>
                     <span>Prairie Remnant Sites</span>
