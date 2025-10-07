@@ -1,7 +1,8 @@
 // js/dataLoader.js
 // Data loading and processing functions
 
-import { DATA_FILES, EXAMPLE_DATA, EXAMPLE_SPECIES_OBSERVATIONS } from './config.js';
+// FIXED: Removed EXAMPLE_DATA and EXAMPLE_SPECIES_OBSERVATIONS from import
+import { DATA_FILES } from './config.js';
 
 // Global data storage
 export let prairieData = [];
@@ -59,15 +60,15 @@ export function processLocationFeatures(data, datasetType) {
             return;
         }
         
-        // Map properties with comprehensive fallbacks
+        // Map properties with comprehensive fallbacks - REMOVED random values
         const siteData = {
             name: props.site_name || props.name || props.Site_Name || props.location || `Prairie Site ${index + 1}`,
             lat: lat,
             lng: lng,
             area: parseFloat(props.area_ha || props.area || props.Area_ha || props.AREA || 0),
-            connectivity: parseFloat(props.connectivity_score || props.connectivity || props.Connectivity || Math.random() * 100),
-            species: parseInt(props.species_count || props.richness || props.species_richness || props.Species_Count || Math.floor(Math.random() * 50)),
-            quality: parseFloat(props.habitat_quality || props.quality || props.Quality || props.habitat_score || Math.random() * 100),
+            connectivity: parseFloat(props.connectivity_score || props.connectivity || props.Connectivity || 0),
+            species: parseInt(props.species_count || props.richness || props.species_richness || props.Species_Count || 0),
+            quality: parseFloat(props.habitat_quality || props.quality || props.Quality || props.habitat_score || 0),
             description: props.description || props.Description || props.notes || `Prairie restoration site for biodiversity research`,
             dataset: datasetType,
             feature_id: props.id || props.ID || props.FID || index,
@@ -104,7 +105,7 @@ export function processConnectivityFeatures(data) {
             const connectivityFeature = {
                 id: props.id || props.ID || props.FID || index,
                 name: props.name || props.corridor_name || `Corridor ${index + 1}`,
-                strength: parseFloat(props.strength || props.connectivity_strength || Math.random() * 100),
+                strength: parseFloat(props.strength || props.connectivity_strength || 0),
                 length: parseFloat(props.length || props.corridor_length || 0),
                 width: parseFloat(props.width || props.corridor_width || 0),
                 habitat_type: props.habitat_type || props.type || 'mixed',
@@ -242,7 +243,7 @@ export function updateDataSourceControls(loadedDatasets) {
     });
 }
 
-// Load GeoJSON data
+// Load GeoJSON data - REMOVED example data fallback
 export async function loadGeoJSONData() {
     showLoading(true);
     let loadedDatasets = [];
@@ -283,9 +284,7 @@ export async function loadGeoJSONData() {
             }
         }
 
-        // Always add example data for demonstration
-        prairieData.push(...EXAMPLE_DATA);
-        iNaturalistData.push(...EXAMPLE_SPECIES_OBSERVATIONS);
+        // REMOVED: No longer adding example data
         
         console.log(`📊 Total prairie sites loaded: ${prairieData.length}`);
         console.log(`📊 Total connectivity features loaded: ${connectivityData.length}`);
@@ -294,13 +293,14 @@ export async function loadGeoJSONData() {
         // Update UI based on what was loaded
         updateDataSourceControls(loadedDatasets);
         
+        // Show warning if no data was loaded
+        if (prairieData.length === 0 && connectivityData.length === 0 && iNaturalistData.length === 0) {
+            showError('No data files could be loaded. Please check that data files exist in the /data folder and are accessible.');
+        }
+        
     } catch (error) {
         console.error('❌ Critical error loading GeoJSON data:', error);
-        showError('Critical error loading research data files. Using example data only.');
-        prairieData.length = 0;
-        prairieData.push(...EXAMPLE_DATA);
-        iNaturalistData.length = 0;
-        iNaturalistData.push(...EXAMPLE_SPECIES_OBSERVATIONS);
+        showError('Critical error loading research data files. Please check console for details.');
     }
     
     showLoading(false);
