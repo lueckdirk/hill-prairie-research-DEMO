@@ -242,9 +242,9 @@ body {
     border-left-color: #e91e63;
 }
 
+/* Removed .example-marker - no longer needed */
 .training-marker { background-color: #28a745; }
 .validation-marker { background-color: #9c27b0; }
-.example-marker { background-color: #ff9800; }
 .prairie-marker { background-color: #74ac00; }
 .connectivity-marker { background-color: #007bff; }
 .inaturalist-marker { background-color: #74ac00; }
@@ -477,6 +477,7 @@ body.about-body {
 .county-item a:hover {
     text-decoration: underline;
 }
+
 .findings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
