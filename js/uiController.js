@@ -121,13 +121,13 @@ export function setupEventListeners() {
         }
     });
 
-    // Data source toggles - UPDATED to match new dataset structure
-    const dataSourceIds = ['show-example', 'show-prairies', 'show-connectivity', 'show-inaturalist'];
+    // Data source toggles - UPDATED: removed 'show-example'
+    const dataSourceIds = ['show-prairies', 'show-connectivity', 'show-inaturalist'];
     dataSourceIds.forEach(id => {
         safeAddEventListener(id, 'change', debouncedUpdate);
     });
 
-    // Filter controls with debouncing for performance - UPDATED to include area filter
+    // Filter controls with debouncing for performance
     const filterIds = ['connectivity-filter', 'species-filter', 'area-filter'];
     filterIds.forEach(id => {
         safeAddEventListener(id, 'input', debouncedUpdate);
@@ -138,8 +138,8 @@ export function setupEventListeners() {
 
 // Initialize UI state
 export function initializeUI() {
-    // Set default checked states if needed
-    const defaultChecked = ['show-example', 'show-inaturalist', 'prairies'];
+    // Set default checked states - UPDATED: removed 'show-example'
+    const defaultChecked = ['show-prairies', 'show-inaturalist'];
     defaultChecked.forEach(id => {
         const element = document.getElementById(id);
         if (element && element.type === 'checkbox') {
@@ -177,7 +177,7 @@ export function updateFilterDisplays() {
     });
 }
 
-// Get current filter values (utility function for other modules)
+// Get current filter values (utility function for other modules) - UPDATED: removed showExample
 export function getCurrentFilters() {
     return {
         connectivityMin: parseInt(document.getElementById('connectivity-filter')?.value || 0),
@@ -185,7 +185,6 @@ export function getCurrentFilters() {
         areaMin: parseFloat(document.getElementById('area-filter')?.value || 0),
         showPrairies: document.getElementById('show-prairies')?.checked || false,
         showConnectivity: document.getElementById('show-connectivity')?.checked || false,
-        showExample: document.getElementById('show-example')?.checked || true,
         showINaturalist: document.getElementById('show-inaturalist')?.checked || true
     };
 }
