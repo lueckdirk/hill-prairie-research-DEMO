@@ -1,7 +1,8 @@
 // js/layerRenderer.js
 // Functions for rendering different map layers
 
-import { EXAMPLE_CORRIDORS, PRIORITY_AREAS, COLORS } from './config.js';
+// FIXED: Removed EXAMPLE_CORRIDORS from import
+import { PRIORITY_AREAS, COLORS } from './config.js';
 import { getPrairieData, getINaturalistData, getConnectivityData } from './dataLoader.js';
 import { getLayerGroups } from './mapManager.js';
 import { 
@@ -16,7 +17,7 @@ import {
     filterPrairieData
 } from './utils.js';
 
-// Get filter values from UI - FULLY UPDATED
+// Get filter values from UI - UPDATED: removed showExample
 function getFilterValues() {
     const safeGetValue = (id, defaultValue = false) => {
         const element = document.getElementById(id);
@@ -33,12 +34,11 @@ function getFilterValues() {
         areaMin: parseFloat(safeGetValue('area-filter', 0)),
         showPrairies: safeGetValue('show-prairies', false),
         showConnectivity: safeGetValue('show-connectivity', false),
-        showExample: safeGetValue('show-example', true),
         showINaturalist: safeGetValue('show-inaturalist', true)
     };
 }
 
-// Update prairie display - FULLY UPDATED
+// Update prairie display - UPDATED: removed example data logic
 export function updatePrairieDisplay() {
     const layers = getLayerGroups();
     if (!layers || !layers.prairieLayer) {
@@ -64,11 +64,10 @@ export function updatePrairieDisplay() {
                     prairie.geometry.coordinates[0][0].map(coord => [coord[1], coord[0]]);
                     
                 marker = L.polygon(coords, {
-                    color: prairie.dataset === 'example' ? '#2c5530' : 
-                           prairie.dataset === 'prairies' ? '#1e5928' : '#2c5530',
+                    color: prairie.dataset === 'prairies' ? '#1e5928' : '#2c5530',
                     weight: 2,
                     opacity: 0.8,
-                    fillColor: prairie.dataset === 'example' ? getQualityColor(prairie.quality) : getDatasetColor(prairie.dataset),
+                    fillColor: getDatasetColor(prairie.dataset),
                     fillOpacity: 0.6
                 });
             } else {
@@ -77,9 +76,8 @@ export function updatePrairieDisplay() {
                 
                 marker = L.circleMarker([prairie.lat, prairie.lng], {
                     radius: Math.max(radius, 5), // Minimum radius of 5
-                    fillColor: prairie.dataset === 'example' ? getQualityColor(prairie.quality) : getDatasetColor(prairie.dataset),
-                    color: prairie.dataset === 'example' ? '#2c5530' : 
-                           prairie.dataset === 'prairies' ? '#1e5928' : '#2c5530',
+                    fillColor: getDatasetColor(prairie.dataset),
+                    color: prairie.dataset === 'prairies' ? '#1e5928' : '#2c5530',
                     weight: 2,
                     opacity: 1,
                     fillOpacity: 0.8
@@ -97,7 +95,7 @@ export function updatePrairieDisplay() {
     console.log(`Rendered ${filteredPrairies.length} prairie features`);
 }
 
-// Update connectivity corridors display - FULLY UPDATED
+// Update connectivity corridors display - UPDATED: removed example corridor logic
 export function updateConnectivityDisplay() {
     const layers = getLayerGroups();
     if (!layers || !layers.connectivityLayer) {
@@ -138,36 +136,6 @@ export function updateConnectivityDisplay() {
                 }
             } catch (error) {
                 console.error(`Error rendering connectivity feature ${index}:`, error, corridor);
-            }
-        });
-    }
-    
-    // Fallback to example corridors if no real data or if example is enabled
-    if (filters.showExample && (connectivityData.length === 0 || renderedCount === 0)) {
-        EXAMPLE_CORRIDORS.forEach((corridor, index) => {
-            try {
-                const quality = corridor.quality || 50;
-                if (quality >= filters.connectivityMin) {
-                    const color = getConnectivityColor(quality);
-                    
-                    const polyline = L.polyline(corridor.coordinates, {
-                        color: color,
-                        weight: 4,
-                        opacity: 0.8,
-                        dashArray: '5, 5', // Dashed line for example data
-                        className: 'example-corridor'
-                    });
-                    
-                    const popupContent = generateCorridorPopupContent({
-                        ...corridor,
-                        isExample: true
-                    });
-                    polyline.bindPopup(popupContent);
-                    polyline.addTo(layers.connectivityLayer);
-                    renderedCount++;
-                }
-            } catch (error) {
-                console.error(`Error rendering example corridor ${index}:`, error);
             }
         });
     }
@@ -324,7 +292,8 @@ export function updateSpeciesDisplay() {
 
     console.log(`Rendered ${renderedCount} species observations`);
 }
-// Update habitat suitability display - ENHANCED
+
+// Update habitat suitability display
 export function updateHabitatDisplay() {
     const layers = getLayerGroups();
     if (!layers || !layers.habitatLayer) {
@@ -362,7 +331,7 @@ export function updateHabitatDisplay() {
     }
 }
 
-// Update conservation priority areas - ENHANCED
+// Update conservation priority areas
 export function updatePriorityDisplay() {
     const layers = getLayerGroups();
     if (!layers || !layers.priorityLayer) {
